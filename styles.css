@@ -1,0 +1,681 @@
+/* ============================================================================
+   Convo — Clean Base (No Rooms) — STEP 1 (Structure & Layout only)
+   Notes:
+   - Minimal dark theme + neon accents (#2d8cff)
+   - No Rooms panel; only Topbar, Auth, Chat, Users panel placeholder
+   - Greek comments + English class/ids
+============================================================================ */
+:root{
+  --bg: #0b0f14;
+  --surface: #0e141b;
+  --text: #e6eef7;
+  --muted: #9db2c7;
+  --primary: #2d8cff;
+  --ring: rgba(45,140,255,0.55);
+  --border: rgba(255,255,255,0.08);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: radial-gradient(1200px 800px at 20% -10%, rgba(45,140,255,0.08), transparent),
+              radial-gradient(800px 600px at 120% 30%, rgba(45,140,255,0.06), transparent),
+              var(--bg);
+  color:var(--text);
+  font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
+}
+body.auth-active #roomsToggleBtn,
+body.auth-active #usersToggleBtn {
+  display: none !important;
+}
+
+
+/* ===================== Utilities ===================== */
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+.badge{
+  background: rgba(45,140,255,0.15);
+  border:1px solid rgba(45,140,255,0.35);
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+/* ===================== Buttons ===================== */
+.btn{
+  appearance:none;
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 0 0 0 transparent;
+  transition:transform .05s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.btn:disabled{opacity:.6; cursor:not-allowed}
+.btn:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
+.btn:active{transform:translateY(1px)}
+
+.btn.ghost{
+  background:transparent;
+  border:1px solid var(--border);
+}
+
+/* Icon-only button */
+.icon-btn{
+  background:transparent;
+  border:1px solid var(--border);
+  width:40px; height:40px;
+  border-radius:12px;
+  cursor:pointer;
+}
+/* === Admin / Danger button === */
+.btn.danger { background:#ef4444; }
+.btn.danger:hover { opacity: .9; }
+
+/* ===================== Topbar ===================== */
+#topbar{
+  position:fixed; inset:0 0 auto 0;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:saturate(120%) blur(10px);
+  border-bottom:1px solid var(--border);
+  z-index:50;
+}
+#topbar .brand{display:flex; align-items:center; gap:8px}
+#topbar .logo{filter: drop-shadow(0 0 8px rgba(45,140,255,0.6));}
+#topbar .title{font-weight:800; letter-spacing:.3px}
+
+/* ===================== Auth Container ===================== */
+#authContainer{
+  position:fixed; inset:56px 0 0 0; /* below topbar */
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px;
+  gap:18px;
+  text-align:center;
+}
+.auth-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  width:min(740px, 95vw);
+}
+.auth-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+}
+.auth-section h3{margin:6px 0 12px 0}
+.grid-2x2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.grid-2x2 input, .grid-2x2 button{
+  width:100%;
+}
+input, textarea{
+  border:1px solid var(--border);
+  background:#0c1218;
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+}
+input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
+
+/* ===================== Rooms Panel (Left) ===================== */
+.panel.left {
+  position: fixed;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  width: 240px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: saturate(120%) blur(6px);
+  padding: 8px;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  z-index: 40;
+  border-right: 1px solid rgba(45, 140, 255, 0.25);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+
+/* Όταν είναι ορατό */
+.panel.left.visible {
+  transform: translateX(0);
+}
+
+/* Toggle κουμπί */
+.panel-toggle {
+  position: fixed;
+  top: 60px;
+  left: 12px;
+  background: rgba(45, 140, 255, 0.2);
+  border: 1px solid rgba(45, 140, 255, 0.5);
+  color: #2d8cff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 45;
+  transition: background 0.2s;
+}
+.panel-toggle:hover {
+  background: rgba(45, 140, 255, 0.35);
+}
+
+
+/* ===================== Chat Container ===================== */
+#chatContainer {
+  position: fixed;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+  transition: all 0.25s ease;
+}
+
+
+.scroll-area{
+  flex:1;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px;
+  background:var(--surface);
+}
+.empty-hint{opacity:.7; text-align:center; margin-top:20px}
+
+/* Input bar (Discord-like) */
+.inputbar{
+  display:grid;
+  grid-template-columns:40px 1fr auto;
+  gap:8px;
+  align-items:end;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:8px;
+  background:var(--surface);
+}
+#messageInput{
+  resize:none;
+  max-height:140px;
+  min-height:40px;
+  overflow:auto;
+}
+/* ===================== Dynamic Main Chat Resize ===================== */
+#chatContainer {
+  transition: all 0.25s ease;
+}
+
+/* Όταν ανοίγει το Rooms Panel (αριστερά) */
+.panel.left.visible ~ #chatContainer {
+  left: 240px; /* ίδιο με πλάτος panel.left */
+}
+
+/* Όταν ανοίγει το Users Panel (δεξιά) */
+.panel.right.visible ~ #chatContainer {
+  right: 250px; /* ίδιο με πλάτος panel.right */
+}
+
+/* Αν ανοίγουν και τα δύο */
+.panel.left.visible ~ .panel.right.visible ~ #chatContainer {
+  left: 240px;
+  right: 250px;
+}
+
+/* ===================== Users Panel (Right) ===================== */
+.panel.right {
+  position: fixed;
+  inset: 56px 0 0 auto;
+  width: 250px;
+  border-left: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: saturate(120%) blur(6px);
+  padding: 6px 4px 6px 10px;  /* 🟢 πιο αριστερή στοίχιση */
+  overflow-y: auto;           /* 🟢 ενεργοποιεί scroll */
+  overflow-x: hidden;
+}
+
+/* Κουμπί toggle δεξιά */
+.panel-toggle.right {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  left: auto;
+  background: rgba(45, 140, 255, 0.2);
+  border: 1px solid rgba(45, 140, 255, 0.5);
+  color: #2d8cff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 45;
+  transition: background 0.2s;
+}
+.panel-toggle.right:hover {
+  background: rgba(45, 140, 255, 0.35);
+}
+
+/* ===================== Responsive ===================== */
+@media (max-width: 920px){
+  #chatContainer{inset:56px 0 0 0}
+  .panel.right{display:none}
+  .auth-grid{grid-template-columns:1fr}
+  .grid-2x2{grid-template-columns:1fr}
+}
+/* ===================== Chat Messages ===================== */
+.message {
+  padding: 6px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+.msg-user {
+  font-weight: 600;
+  color: var(--primary);
+  margin-right: 6px;
+}
+.msg-text {
+  color: var(--text);
+}
+.msg-time {
+  float: right;
+  opacity: 0.5;
+  font-size: 12px;
+}
+.msg-text {
+  display: inline-block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.msg-user {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.msg-time {
+  font-size: 12px;
+  opacity: 0.5;
+}
+/* ===================== Users list styles (presence) ===================== */
+.user-item{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  padding:8px 6px;
+  border-bottom:1px dashed rgba(255,255,255,0.05);
+}
+
+.user-item .user-name{flex:1}
+.user-item .user-state{opacity:.6; font-size:12px}
+.dot{
+  width:10px; height:10px; border-radius:999px;
+  box-shadow:0 0 0 2px rgba(0,0,0,0.25);
+}
+.dot.online{ background:#22c55e; }   /* πράσινο */
+.dot.offline{ background:#64748b; }  /* γκρι */
+/* ===================== Userlist Left Align (final fix) ===================== */
+#usersPanel {
+  padding-left: 4px !important;  /* φέρνει όλα πιο αριστερά */
+}
+
+.user-item {
+  margin-left: 0 !important;     /* μηδενίζει τυχόν offset */
+  padding-left: 0 !important;    /* φέρνει το dot και το όνομα εντελώς αριστερά */
+}
+/* ===================== Users Header Counter Align ===================== */
+#usersPanel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+#usersPanel .panel-header h2 {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 15px;
+}
+
+#usersPanel .user-count {
+  position: relative;
+  top: -2px;   /* 🟢 ανεβάζει ελαφρώς το "2" */
+}
+
+/* ===================== Role Badges ===================== */
+.role-badge {
+  margin-left: 4px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.role-badge.admin { color: #ff4d4d; }  /* Κόκκινο για Admin */
+.role-badge.vip { color: #ffd700; }    /* Χρυσό για VIP */
+
+.banned-icon {
+  color: #ff4d4d;
+  font-size: 14px;
+  margin-left: 4px;
+  cursor: default;
+  opacity: 0.9;
+}
+
+
+/* ===================== Users List Role Groups ===================== */
+.user-group-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  margin: 10px 0 4px 4px;
+  opacity: 0.8;
+}
+
+.user-group-title.admin { color: #ff4d4d; }   /* Κόκκινο για Admin */
+.user-group-title.vip { color: #ffd700; }     /* Χρυσό για VIP */
+.user-group-title.user { color: #2d8cff; }    /* Μπλε Convo για Users */
+.user-group-title.offline {
+  color: #9ca3af; /* Γκρι για Offline */
+  opacity: 0.5;
+  font-style: italic;
+}
+
+/* ===================== TYPING ===================== */
+.typing-indicator {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-left: 24px;
+  margin-top: 2px;
+  color: var(--muted);
+  animation: blinkTyping 1s infinite;
+  display: block;
+}
+
+@keyframes blinkTyping {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.35; }
+}
+
+/* === FIX: Proper chat resizing when toggling panels === */
+#chatContainer {
+  position: fixed;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transition: all 0.25s ease;
+}
+
+/* Όταν ανοίγει το Rooms Panel */
+.panel.left.visible ~ #chatContainer {
+  left: 240px;
+}
+
+/* Όταν ανοίγει το Users Panel */
+.panel.right.visible ~ #chatContainer {
+  right: 250px;
+}
+
+/* Όταν ανοίγουν και τα δύο */
+.panel.left.visible ~ .panel.right.visible ~ #chatContainer {
+  left: 240px;
+  right: 250px;
+}
+#adminContextMenu {
+  position: fixed;
+  background: rgba(20,20,25,0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 999;
+  padding: 4px 0;
+  min-width: 100px;
+}
+#adminContextMenu .menu-item {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+#adminContextMenu .menu-item:hover {
+  background: rgba(239,68,68,0.15);
+}
+.hidden { display: none !important; }
+/* ===================== SYSTEM LOGS MODAL ===================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  width: min(600px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 0 25px rgba(45,140,255,0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.modal-content {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.log-entry {
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  padding: 6px 0;
+  font-size: 14px;
+}
+.log-entry strong {
+  color: var(--primary);
+}
+.btn.small {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+/* ===================== ADMIN MENU BUTTON ===================== */
+#adminMenuBtn {
+  font-size: 18px;
+  color: #2d8cff;
+}
+#adminMenuBtn:hover {
+  opacity: 0.8;
+}
+
+/* ===================== ADMIN CONTEXT MENU ===================== */
+#adminContextMenu {
+  position: absolute;
+  background: rgba(20, 25, 35, 0.95);
+  border: 1px solid rgba(45, 140, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  backdrop-filter: blur(6px);
+}
+#adminContextMenu.hidden {
+  display: none;
+}
+#adminContextMenu button {
+  background: none;
+  border: none;
+  color: #fff;
+  text-align: left;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+#adminContextMenu button:hover {
+  background: rgba(45, 140, 255, 0.2);
+}
+/* ===================== USER RIGHT-CLICK HIGHLIGHT ===================== */
+.user-item.highlight {
+  background: rgba(45, 140, 255, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(45, 140, 255, 0.4);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+/* ===================== SYSTEM LOGS POLISH (Step 9G) ===================== */
+#systemLogsFilter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filter-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(45,140,255,0.2);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+.filter-btn.active {
+  background: rgba(45,140,255,0.25);
+  border-color: rgba(45,140,255,0.6);
+}
+.filter-btn:hover {
+  background: rgba(45,140,255,0.1);
+}
+
+#systemLogsList {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.log-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+  transition: background 0.2s ease;
+}
+.log-item:hover {
+  background: rgba(255,255,255,0.07);
+}
+.log-line {
+  display: flex;
+  justify-content: space-between;
+}
+.log-line.small {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.log-line.tiny {
+  font-size: 12px;
+  opacity: 0.6;
+}
+/* ===================== MUTE STATE ===================== */
+.muted-input {
+  opacity: 0.6;
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.3);
+}
+/* ===================== MUTED USER INDICATOR ===================== */
+.user-item.muted {
+  opacity: 0.6;
+}
+
+.user-item .muted-icon {
+  color: #ff4d4d;
+  margin-left: 4px;
+  font-size: 14px;
+  vertical-align: middle;
+  opacity: 0.9;
+}
+
+.log-item[data-type="mute"] {
+  border-color: rgba(255, 102, 204, 0.5);
+  background: rgba(255, 102, 204, 0.07);
+}
+/* ===================== Rooms List ===================== */
+#roomsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.room-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(45, 140, 255, 0.15);
+}
+
+.room-item.active {
+  background: rgba(45, 140, 255, 0.35);
+  color: #2d8cff;
+  font-weight: 600;
+}
+.room-item.active-room {
+  background: rgba(45,140,255,0.25);
+  border: 1px solid rgba(45,140,255,0.5);
+  box-shadow: 0 0 10px rgba(45,140,255,0.3);
+  transition: all 0.2s ease;
+}
+.rooms-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.btn.small {
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn.small.danger {
+  background: rgba(255, 60, 60, 0.15);
+  border: 1px solid rgba(255, 60, 60, 0.4);
+  color: #ff6060;
+}
+

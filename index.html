@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Convo — Clean Base (No Rooms)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- ===================== TOPBAR (Logout on the right) ===================== -->
+  <header id="topbar">
+    <div class="brand">
+      <span class="logo">💬</span>
+      <span class="title">Convo</span>
+    </div>
+    <div class="top-actions">
+<button id="systemBtn" class="hidden icon-btn" title="System Logs">⚡</button>
+
+<!-- ===================== ADMIN MENU BUTTON ===================== -->
+<button id="adminMenuBtn" class="icon-btn hidden" title="Admin Menu">⚙️</button>
+
+<button id="logoutBtn" class="hidden">Logout</button>
+    </div>
+  </header>
+
+  <!-- ===================== AUTH CONTAINER (Splash Auth UI) ===================== -->
+  <main id="authContainer">
+    <h2>Welcome to Convo</h2>
+    <p class="muted">Create an account or log in to continue.</p>
+
+    <div class="auth-grid">
+      <!-- ==== REGISTER ==== -->
+      <section class="auth-section">
+        <h3>Create Account</h3>
+        <div class="grid-2x2">
+          <input type="text" id="registerUsername" placeholder="Username" />
+          <input type="email" id="registerEmail" placeholder="Email" />
+          <input type="password" id="registerPassword" placeholder="Password" />
+          <button id="registerBtn" class="btn">Register</button>
+        </div>
+      </section>
+
+      <!-- ==== LOGIN ==== -->
+      <section class="auth-section">
+        <h3>Login</h3>
+        <div class="grid-2x2">
+          <input type="email" id="loginEmail" placeholder="Email" />
+          <input type="password" id="loginPassword" placeholder="Password" />
+          <button id="loginBtn" class="btn">Login</button>
+          <button id="guestBtn" class="btn ghost">Continue as Guest</button>
+        </div>
+      </section>
+    </div>
+  </main>
+  <!-- ===================== Rooms Panel ===================== -->
+<aside id="roomsPanel" class="panel left hidden">
+  <div class="panel-header">
+    <h3>Rooms</h3>
+  </div>
+<div class="rooms-controls">
+  <button id="createRoomBtn" class="btn small">➕ New Room</button>
+  <button id="deleteRoomBtn" class="btn small danger">🗑 Delete Room</button>
+</div>
+  <ul id="roomsList" class="rooms-list">
+    <!-- Τα rooms θα εμφανιστούν εδώ -->
+  </ul>
+</aside>
+
+<button id="roomsToggleBtn" class="panel-toggle hidden">☰</button>
+
+
+<!-- ===================== USERS PANEL ===================== -->
+<aside id="usersPanel" class="panel right hidden">
+  <header class="panel-header">
+    <h4>Users</h4>
+    <span id="usersCount" class="badge">0</span>
+  </header>
+  <ul id="usersList" class="list"></ul>
+</aside>
+<button id="usersToggleBtn" class="panel-toggle right hidden">👥</button>
+
+<!-- ===================== CHAT CONTAINER ===================== -->
+<main id="chatContainer" class="hidden">
+  <section id="messages" class="scroll-area">
+    <div class="empty-hint">👋 Καλωσήρθες! Στείλε το πρώτο σου μήνυμα.</div>
+  </section>
+
+  <form id="messageForm" class="inputbar" autocomplete="off">
+    <button type="button" id="emojiBtn" class="icon-btn" title="Emoji">😊</button>
+    <textarea id="messageInput" rows="1" placeholder="Γράψε ένα μήνυμα…"></textarea>
+    <button type="submit" id="sendBtn" class="btn">Send</button>
+  </form>
+</main>
+<!-- ===== Admin Context Menu ===== -->
+<div id="adminContextMenu" class="hidden">
+  <div class="menu-item">🗑️ Delete</div>
+</div>
+<!-- ===================== SYSTEM LOGS MODAL (Admin-only) ===================== -->
+<div id="systemModal" class="hidden modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🧠 System Logs</h3>
+          <button id="clearLogsBtn" class="btn danger small">Clear</button>
+
+      <button id="closeSystemBtn" class="icon-btn">✖</button>
+    </div>
+    <div class="modal-content">
+  <div id="systemLogsFilter"></div>
+  <div id="systemLogsList"></div>
+</div>
+
+  </div>
+</div>
+
+    <!-- ===================== SCRIPTS ===================== -->
+  <script type="module" src="./roomsPanel.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
