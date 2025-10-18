@@ -57,16 +57,24 @@ function renderRooms() {
 
   roomsListEl.querySelectorAll(".room-item").forEach((item) => {
     item.addEventListener("click", () => {
-      
-      const roomId = item.dataset.room;
-      if (roomId === currentRoom) return;
+  const roomId = item.dataset.room;
+  if (roomId === currentRoom) return;
 
-     currentRoom = roomId;
-  localStorage.setItem("lastRoom", currentRoom);  // 🧩 αποθήκευση
-  renderRooms();                                   // ανανέωση εμφάνισης
-  loadRoomMessages(roomId);                        // φόρτωση μηνυμάτων
+  currentRoom = roomId;
+  localStorage.setItem("lastRoom", currentRoom);
+  renderRooms();
+
+  // --- Καθάρισε το input όταν αλλάζεις room ---
+  const msgInput = document.getElementById("messageInput");
+  if (msgInput) {
+    msgInput.value = "";
+    msgInput.style.height = "40px";
+  }
+
+  loadRoomMessages(roomId);
   console.log("🟢 Room changed:", roomId);
 });
+
   });
 }
 

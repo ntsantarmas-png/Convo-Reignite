@@ -250,6 +250,10 @@ input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
   overflow-y: auto;           /* 🟢 ενεργοποιεί scroll */
   overflow-x: hidden;
 }
+/* === FIX: Hide scrollbar when panel is sliding/hidden === */
+.panel.right:not(.visible) {
+  overflow-y: hidden !important;
+}
 
 /* Κουμπί toggle δεξιά */
 .panel-toggle.right {
@@ -477,10 +481,17 @@ input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
   border-radius: 16px;
   padding: 16px;
   width: min(600px, 90vw);
-  max-height: 70vh;
-  overflow-y: auto;
+  max-height: 80vh;
+  overflow: hidden; /* ✅ μόνο εσωτερικό scroll */
   box-shadow: 0 0 25px rgba(45,140,255,0.25);
 }
+
+.modal-content {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 
 .modal-header {
   display: flex;
@@ -491,11 +502,7 @@ input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
   margin-bottom: 10px;
 }
 
-.modal-content {
-  padding: 4px 0;
-  font-size: 14px;
-  line-height: 1.5;
-}
+
 
 .log-entry {
   border-bottom: 1px dashed rgba(255,255,255,0.08);
@@ -579,11 +586,6 @@ input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
   background: rgba(45,140,255,0.1);
 }
 
-#systemLogsList {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
 
 .log-item {
   background: rgba(255,255,255,0.03);
@@ -679,3 +681,209 @@ input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
   color: #ff6060;
 }
 
+/* ===================== CONVO BUBBLE CORE ===================== */
+#convoBubbleOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeInBg 0.25s ease;
+}
+
+#convoBubbleOverlay.hidden { display: none; }
+
+.bubble-box {
+  background: rgba(20,25,35,0.95);
+  border: 1px solid rgba(45,140,255,0.4);
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(45,140,255,0.45);
+  padding: 18px;
+  width: min(400px, 90vw);
+  color: var(--text);
+  animation: popIn 0.25s ease;
+}
+
+.bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bubble-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.bubble-close {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.bubble-content {
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.bubble-actions {
+  text-align: right;
+}
+
+/* === Animations === */
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.bubble-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+/* ===================== Convo Bubble Smooth Animations (Step 3) ===================== */
+#convoBubbleOverlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#convoBubbleOverlay:not(.hidden) {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.bubble-box {
+  animation: bubblePop 0.25s ease;
+}
+
+@keyframes bubblePop {
+  from { transform: scale(0.95); opacity: 0.6; }
+  to   { transform: scale(1); opacity: 1; }
+}
+/* ===================== BANNED USERS ===================== */
+
+.banned-list {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.banned-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.banned-item button {
+  background: #2a7cff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #fff;
+  cursor: pointer;
+}
+.banned-item button:hover {
+  background: #1a5cd6;
+}
+/* === SINGLE MODAL SCROLL FIX === */
+body.modal-open {
+  overflow: hidden !important; /* κλειδώνει το body */
+}
+
+.modal-box {
+  overflow: hidden;
+}
+
+.modal-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+/* === Show room toggle only when chat is visible === */
+#roomsToggleBtn {
+  display: none;
+}
+
+/* ✅ όταν το chat γίνει ορατό, τότε να φαίνεται το κουμπί */
+body.chat-active #roomsToggleBtn {
+  display: inline-block;
+}
+/* === Show Banned Users button only in chat mode === */
+#showBannedBtn {
+  display: none;
+}
+body.chat-active #showBannedBtn {
+  display: inline-block;
+}
+/* ===================== YouTube Panel ===================== */
+.youtube-panel {
+  position: fixed;
+  right: 10px;
+  bottom: 70px;
+  width: 360px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  color: #fff;
+  z-index: 120;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.youtube-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+.youtube-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+.youtube-content {
+  padding: 12px;
+  text-align: center;
+  min-height: 200px;
+}
+.youtube-panel {
+  transition: opacity 0.25s ease, transform 0.25s ease, bottom 0.25s ease;
+}
+.youtube-panel:not(.hidden) {
+  bottom: 80px;
+  opacity: 1;
+}
+.system-message {
+  text-align: center;
+  opacity: 0.8;
+  font-style: italic;
+  color: #ffcc66;
+  margin: 6px 0;
+}
+.system-message a {
+  color: #66b3ff;
+  text-decoration: none;
+}
+.system-message a:hover {
+  text-decoration: underline;
+}

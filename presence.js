@@ -1,12 +1,12 @@
 // ============================================================================
-// PRESENCE — Step 5A (Own online/offline status)
+// PRESENCE — Step 5A (Own online/offline status — χωρίς kick disconnect)
 // ============================================================================
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   ref, onValue, onDisconnect, serverTimestamp, set
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 import { auth, db } from "./firebaseInit.js";
-
+import { showConvoAlert } from "./app.js"; // βεβαιώσου ότι υπάρχει στην κορυφή του αρχείου
 let currentUid = null;
 
 export function setupPresence() {
@@ -17,6 +17,18 @@ export function setupPresence() {
     if (user) {
       currentUid = user.uid;
       const statusRef = ref(db, `status/${user.uid}`);
+      // === Kick message listener (Convo bubble) ===
+
+const kickRef = ref(db, "kicks/" + user.uid);
+onValue(kickRef, (snap) => {
+  if (snap.exists()) {
+    const val = snap.val();
+    const by = val.kickedBy || "Admin";
+    const reason = val.reason || "χωρίς λόγο";
+    showConvoAlert(`⚠️ Έχεις δεχθεί Kick από τον ${by}\n📝 Λόγος: ${reason}`);
+  }
+});
+
 
       // Όταν υπάρχει σύνδεση στο RTDB
       onValue(connectedRef, (snap) => {

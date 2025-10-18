@@ -20,7 +20,10 @@ import {
   get,
   set
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { initYouTubePanel } from "./youtube.js";
 
+import { off } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+let systemLogsActive = false;
 
 // === Local Firebase Init ===
 import { db, auth } from "./firebaseInit.js";
@@ -49,10 +52,8 @@ watchAuthState();
 setupPresence();
 initUsersList();
 initUsersPanel();
+initYouTubePanel();
 
-
-// === Start listening for chat messages ===
-initMessagesListener();
 
 
 // ===================== BASIC UI LOGIC (kept from Step 1) =====================
@@ -109,9 +110,32 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-systemBtn?.addEventListener("click", () => {
+systemBtn?.addEventListener("click", async () => {
+  const logsRef = ref(db, "adminLogs");
+  off(logsRef); // 🧹 σταματά τυχόν προηγούμενο listener
+  console.log("♻️ Old System Logs listener cleared before new open");
+
   systemModal.classList.remove("hidden");
+  document.body.classList.add("modal-open"); // ✅ κλείδωσε το body
+
+  const logsContainer = document.getElementById("systemLogsList");
+  if (!logsContainer) return;
+
+  // 1️⃣ Καθάρισε λίστα και φόρτωσε παλιά logs
+  logsContainer.innerHTML = "";
+  const snap = await get(logsRef);
+  const allLogs = [];
+  snap.forEach((child) => allLogs.push(child));
+  allLogs.reverse().forEach((child) => renderLogEntry(child));
+
+  // 2️⃣ Ενεργοποίησε Realtime Listener (μόνο όταν ανοίγει το modal)
+  initSystemLogsListener(); // ✅ ενεργοποιεί realtime μόλις ανοίξει
+
+  console.log("🧠 System Logs ενεργοποιήθηκαν σε realtime χωρίς F5");
 });
+
+
+
 // === Create filter buttons (Step 9 Part G) ===
 const filterBar = document.getElementById("systemLogsFilter");
 if (filterBar && !filterBar.hasChildNodes()) {
@@ -146,48 +170,52 @@ filterBar?.addEventListener("click", (e) => {
 
 closeSystemBtn?.addEventListener("click", () => {
   systemModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");  // ✅ ξεκλείδωσε το body
+
+  const logsRef = ref(db, "adminLogs");
+  off(logsRef); // 🧹 σταματά τον listener
+  systemLogsActive = false;
+  console.log("🧠 System Logs listener σταμάτησε");
 });
+
 
 // Κλείσιμο με click έξω από το modal
 systemModal?.addEventListener("click", (e) => {
-  if (e.target === systemModal) systemModal.classList.add("hidden");
+  if (e.target === systemModal) {
+    systemModal.classList.add("hidden");
+    document.body.classList.remove("modal-open"); // ✅ ξεκλείδωσε το body όταν κάνεις click έξω
+  }
 });
+
 // ============================================================================
 // SYSTEM LOGS — Realtime Fetch (Step 2)
 // ============================================================================
 
 
-const logsContainer = document.getElementById("systemLogsList");
-
 function renderLogEntry(data) {
   const log = data.val();
   if (!log) return;
 
+  // ⬇️ πάντα φρέσκο reference στο container
+  const logsContainer = document.getElementById("systemLogsList");
+  if (!logsContainer) return;
+
   const type = log.type || "other";
   const color =
-    type === "ban"
-      ? "#ff4d4d"
-      : type === "kick"
-      ? "#ffb84d"
-      : type === "delete"
-      ? "#2d8cff"
-      : type === "mute"
-      ? "#ff66cc"
-      : "#aaa";
+    type === "ban"   ? "#ff4d4d" :
+    type === "kick"  ? "#ffb84d" :
+    type === "delete"? "#2d8cff" :
+    type === "mute"  ? "#ff66cc" : "#aaa";
 
   const time = new Date(log.createdAt || Date.now()).toLocaleString("el-GR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 
   const target = log.targetName
-    ? `<div style="opacity:0.85;">🎯 target: <strong>${log.targetName}</strong></div>`
-    : "";
+    ? `<div style="opacity:0.85;">🎯 target: <strong>${log.targetName}</strong></div>` : "";
 
   const room = log.room
-    ? `<div style="opacity:0.7; font-size:13px;">🏠 room: ${log.room}</div>`
-    : "";
+    ? `<div style="opacity:0.7; font-size:13px;">🏠 room: ${log.room}</div>` : "";
 
   const el = document.createElement("div");
   el.classList.add("log-item");
@@ -196,20 +224,30 @@ function renderLogEntry(data) {
     <div><strong style="color:${color}">${type.toUpperCase()}</strong> — <span>${log.action || log.type || "unknown"}</span></div>
     ${target}
     <div class="muted">by: ${log.adminName || log.by || "unknown"}</div>
+    ${log.reason ? `<div class="muted" style="color:#ffa;">📝 reason: ${log.reason}</div>` : ""}
     ${room}
     <div class="muted small">${time}</div>
   `;
+
   logsContainer.prepend(el);
   logsContainer.scrollTop = logsContainer.scrollHeight;
 }
 
-
+// ============================================================================
+// SYSTEM LOGS — Realtime Listener (Fixed Version)
+// ============================================================================
 
 export function initSystemLogsListener() {
+  // Αν υπάρχει ήδη listener, καθάρισέ τον πρώτα
   const logsRef = ref(db, "adminLogs");
-  onChildAdded(logsRef, renderLogEntry);
-  console.log("🧠 Listening to adminLogs...");
+  off(logsRef); // 🧹 καθάρισε όποιον παλιό listener υπάρχει
+
+  // Ενεργοποίησε νέο listener
+  onChildAdded(logsRef, (snap) => renderLogEntry(snap));
+
+  console.log("🧠 Listening to adminLogs (single realtime listener active)");
 }
+
 // === Απόδοση logs με βάση το φίλτρο ===
 function renderLogs() {
   const allLogs = document.querySelectorAll(".log-item");
@@ -220,12 +258,13 @@ function renderLogs() {
   });
 }
 
-// Ξεκίνημα listener μόνο αν είσαι MysteryMan
-onAuthStateChanged(auth, (user) => {
-  if (user && user.displayName?.toLowerCase() === "mysteryman") {
-    initSystemLogsListener();
-  }
-});
+// === Ξεκίνημα listener μόνο αν είσαι MysteryMan ===
+//onAuthStateChanged(auth, (user) => {
+  //if (user && user.displayName?.toLowerCase() === "mysteryman") {
+    //initSystemLogsListener();
+  //}
+//});
+
 // ============================================================================
 // SYSTEM LOGS — Clear Button (MysteryMan only)
 // ============================================================================
@@ -237,8 +276,11 @@ clearLogsBtn?.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user || user.displayName?.toLowerCase() !== "mysteryman") return;
   await remove(ref(db, "adminLogs"));
-  document.querySelector("#systemModal .modal-content").innerHTML =
-    `<p class="muted">📜 Δεν υπάρχουν logs.</p>`;
+  const list = document.getElementById("systemLogsList");
+if (list) {
+  list.innerHTML = `<p class="muted">📜 Δεν υπάρχουν logs.</p>`;
+}
+
 });
 // ============================================================================
 // ADMIN MENU (Fixed Version)
@@ -255,143 +297,88 @@ document.addEventListener("DOMContentLoaded", () => {
       adminMenuBtn.classList.add("hidden");
     }
   });
+// ============================================================================
+// ADMIN — Muted Users Button visibility (Admins only)
+// ============================================================================
+onAuthStateChanged(auth, (user) => {
+  const mutedBtn = document.getElementById("showMutedBtn");
+  if (!mutedBtn) return;
 
-  // === Άνοιγμα / Κλείσιμο Admin Menu Modal ===
-  adminMenuBtn.addEventListener("click", () => {
-    const existing = document.getElementById("adminMenuModal");
-    if (existing) {
-      existing.remove();
-      return;
-    }
+  const name = user?.displayName?.toLowerCase() || "";
+  const isAdmin = name === "mysteryman" || name.includes("admin");
 
-    const modal = document.createElement("div");
-    modal.id = "adminMenuModal";
-    modal.className = "modal-overlay";
-    modal.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-header">
-          <strong>🛠️ Admin Menu</strong>
-          <button id="closeAdminMenu" class="btn small ghost">✖</button>
-        </div>
-        <div class="modal-content">
-          <button id="menuClearChatBtn" class="btn danger" style="margin-bottom:8px;">
-            🧹 Clear Chat for Everyone
-          </button>
-
-          <button id="menuBanUserBtn" class="btn danger" style="margin-bottom:8px;">
-            🚫 Ban / Kick User
-          </button>
-<button id="menuMuteUserBtn" class="btn ghost" style="margin-bottom:8px;">
-  🔇 Mute / Unmute User
-</button>
-          <p style="opacity:.7;">(More tools coming soon...)</p>
-        </div>
-      </div>
-      
-    `;
-    document.body.appendChild(modal);
-
-    // === Κλείσιμο modal ===
-    document.getElementById("closeAdminMenu").addEventListener("click", () => modal.remove());
-
-    // === CLEAR CHAT inside Admin Menu ===
-    const menuClearChatBtn = document.getElementById("menuClearChatBtn");
-    menuClearChatBtn.addEventListener("click", () => {
-      if (!confirm("⚠️ Clear chat for everyone? This cannot be undone.")) return;
-      document.getElementById("clearChatBtn")?.click(); // reuse existing logic
-    });
-
-    // === BAN / KICK USER ===
-    const menuBanUserBtn = document.getElementById("menuBanUserBtn");
-    menuBanUserBtn.addEventListener("click", async () => {
-      const targetUid = prompt("🚫 Enter UID of user to ban (kick them out):");
-      if (!targetUid) return;
-      if (!confirm(`⚠️ Are you sure you want to BAN this user?\n\nUID: ${targetUid}`)) return;
-
-      try {
-        await update(ref(db, "users/" + targetUid), { banned: true });
-        await push(ref(db, "adminLogs"), {
-          type: "ban",
-          targetUid,
-          adminUid: auth.currentUser.uid,
-          adminName: auth.currentUser.displayName || "Admin",
-          createdAt: serverTimestamp()
-        });
-        alert("✅ User has been banned and logged.");
-      } catch (err) {
-        console.error("Ban error:", err);
-        alert("❌ Ban failed — check console.");
-      }
-
-    });
-    // === MUTE / UNMUTE USER ===
-const menuMuteUserBtn = document.getElementById("menuMuteUserBtn");
-menuMuteUserBtn.addEventListener("click", async () => {
-  const targetUid = prompt("🔇 Enter UID of user to mute/unmute:");
-  if (!targetUid) return;
-
-  const targetRef = ref(db, "users/" + targetUid + "/muted");
-
-  // Έλεγχος τρέχουσας κατάστασης
-  const snap = await get(targetRef);
-  const currentlyMuted = snap.exists() && snap.val() === true;
-
-  const confirmText = currentlyMuted
-    ? `🔈 Unmute this user?\n\nUID: ${targetUid}`
-    : `🔇 Mute this user?\n\nUID: ${targetUid}`;
-
-  if (!confirm(confirmText)) return;
-
-  try {
-    await set(targetRef, !currentlyMuted);
-
-    await push(ref(db, "adminLogs"), {
-      type: "mute",
-      targetUid,
-      adminUid: auth.currentUser.uid,
-      adminName: auth.currentUser.displayName || "Admin",
-      action: currentlyMuted ? "unmute" : "mute",
-      createdAt: serverTimestamp(),
-    });
-
-    alert(currentlyMuted ? "✅ User unmuted" : "🔇 User muted");
-  } catch (err) {
-    console.error("Mute error:", err);
-    alert("❌ Mute action failed — check console.");
+  if (user && isAdmin) {
+    mutedBtn.classList.remove("hidden");
+  } else {
+    mutedBtn.classList.add("hidden");
   }
 });
 
+  // === Άνοιγμα / Κλείσιμο Admin Menu Modal ===
+adminMenuBtn.addEventListener("click", () => {
+  const existing = document.getElementById("adminMenuModal");
+  if (existing) {
+    existing.remove();
+    return;
+  }
 
+  const modal = document.createElement("div");
+  modal.id = "adminMenuModal";
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-header">
+        <strong>🛠️ Admin Menu</strong>
+        <button id="closeAdminMenu" class="btn small ghost">✖</button>
+      </div>
+      <p style="opacity:.7;">(More tools coming soon...)</p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // === Κλείσιμο modal ===
+  document.getElementById("closeAdminMenu")
+    ?.addEventListener("click", () => modal.remove());
+
+  // === CLEAR CHAT inside Admin Menu ===
+  const menuClearChatBtn = document.getElementById("menuClearChatBtn");
+  menuClearChatBtn?.addEventListener("click", () => {
+    if (!confirm("⚠️ Clear chat for everyone? This cannot be undone.")) return;
+    document.getElementById("clearChatBtn")?.click(); // reuse existing logic
   });
-});
-// ============================================================================
-// MUTE SYSTEM — Part A (Base setup)
-// ============================================================================
 
-const sendBtn = document.getElementById("sendBtn");
+}); // ✅ κλείνει το addEventListener("click", ...)
 
-// === Παρακολούθηση του muted state του τρέχοντος χρήστη ===
-onAuthStateChanged(auth, (user) => {
-  if (!user || !msgInput) return;
 
-  const muteRef = ref(db, "users/" + user.uid + "/muted");
+// === BAN / KICK USER ===
+const menuBanUserBtn = document.getElementById("menuBanUserBtn");
+if (menuBanUserBtn) {  // ✅ Προστέθηκε έλεγχος ύπαρξης για αποφυγή console error
+  menuBanUserBtn.addEventListener("click", async () => {
+    const targetUid = await showConvoPrompt("🚫 Enter UID of user to ban:", { placeholder: "User UID..." });
+    if (!targetUid) return;
 
-  onValue(muteRef, (snap) => {
-    const isMuted = snap.val() === true;
+    const confirmBan = await showConvoPrompt(`⚠️ Confirm BAN for UID: ${targetUid}? Type "yes" to proceed:`);
+    if (confirmBan?.toLowerCase() !== "yes") return;
 
-    if (isMuted) {
-      msgInput.readOnly = true;
-      msgInput.placeholder = "🔇 Έχεις τεθεί σε mute από admin";
-      sendBtn.disabled = true;
-      msgInput.classList.add("muted-input");
-    } else {
-      msgInput.readOnly = false;
-      msgInput.placeholder = "Γράψε ένα μήνυμα…";
-      sendBtn.disabled = false;
-      msgInput.classList.remove("muted-input");
+    try {
+      await update(ref(db, "users/" + targetUid), { banned: true });
+      await push(ref(db, "adminLogs"), {
+        type: "ban",
+        targetUid,
+        adminUid: auth.currentUser.uid,
+        adminName: auth.currentUser.displayName || "Admin",
+        createdAt: serverTimestamp()
+      });
+      showConvoAlert("✅ User has been banned and logged.");
+    } catch (err) {
+      console.error("Ban error:", err);
+      showConvoAlert("❌ Ban failed — check console.");
     }
   });
-});
+} // ✅ τέλος του safety check
+
+}); // ✅ κλείνει το document.addEventListener("DOMContentLoaded")
+
 // ============================================================================
 // 🧩 Rooms Panel Toggle
 // ============================================================================
@@ -410,3 +397,110 @@ if (roomsToggleBtn && roomsPanel) {
     }
   });
 }
+
+// ============================================================================
+// 🧩 Convo Bubble Core (Step 1)
+// ============================================================================
+export function showConvoAlert(message) {
+  const overlay = document.getElementById("convoBubbleOverlay");
+  const content = document.getElementById("bubbleContent");
+  const closeBtn = document.getElementById("bubbleCloseBtn");
+  const okBtn = document.getElementById("bubbleOkBtn");
+
+  if (!overlay || !content) return console.warn("⚠️ ConvoBubble missing from DOM");
+
+  // Ενημέρωσε περιεχόμενο
+  content.innerHTML = `<div>${message}</div>`;
+
+  // Εμφάνισε bubble
+  overlay.classList.remove("hidden");
+
+  // === Συνάρτηση κλεισίματος ===
+  function closeBubble() {
+    overlay.classList.add("hidden");
+    // Καθάρισε όλους τους listeners
+    document.removeEventListener("keydown", escListener);
+    overlay.removeEventListener("click", outsideClick);
+    okBtn?.removeEventListener("click", okClick);
+    closeBtn?.removeEventListener("click", closeClick);
+  }
+
+  // === Listeners ===
+  const escListener = (e) => { if (e.key === "Escape") closeBubble(); };
+  const outsideClick = (e) => { if (e.target === overlay) closeBubble(); };
+  const okClick = () => closeBubble();
+  const closeClick = () => closeBubble();
+
+  document.addEventListener("keydown", escListener);
+  overlay.addEventListener("click", outsideClick);
+  okBtn?.addEventListener("click", okClick);
+  closeBtn?.addEventListener("click", closeClick);
+}
+window.showConvoAlert = showConvoAlert;
+
+window.showConvoAlert = showConvoAlert;
+// ============================================================================
+// 🧩 Convo Bubble — Prompt Mode (Smart Version)
+// ============================================================================
+// 🧩 Convo Bubble — Prompt Mode (fixed)
+export function showConvoPrompt(message, options = {}) {   // <== 🔹 Ανοίγει εδώ
+  return new Promise((resolve) => {                        // <== 🔹 Ανοίγει Promise
+
+    const overlay = document.getElementById("convoBubbleOverlay");
+    const content  = document.getElementById("bubbleContent");
+    const closeBtn = document.getElementById("bubbleCloseBtn");
+    const okBtn    = document.getElementById("bubbleOkBtn");
+    if (!overlay || !content || !okBtn) return resolve(null);
+
+    // περιεχόμενο + (προαιρετικό) input
+    const needsInput = /(name|nickname|reason)/i.test(message);
+
+    content.innerHTML = needsInput
+      ? `<div style="margin-bottom:8px;">${message}</div>
+         <input id="bubbleInput" type="text" placeholder="${options.placeholder || ''}"
+                style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#0c1218;color:#fff;">`
+      : `<div>${message}</div>`;
+
+    const input = document.getElementById("bubbleInput") || null;
+    overlay.classList.remove("hidden");
+
+    let resolved = false;
+    const cleanup = () => {
+      document.removeEventListener("keydown", onKey);
+      overlay.removeEventListener("click", onOutside);
+      closeBtn?.removeEventListener("click", onClose);
+      okBtn.removeEventListener("click", onOk);
+    };
+
+    const close = (val = null) => {
+      if (resolved) return;
+      resolved = true;
+      overlay.classList.add("hidden");
+      cleanup();
+      resolve(val);
+    };
+
+    const onOk = () => {
+      let val = "ok";
+      if (input) val = input.value.trim() || "ok";
+      close(val);
+    };
+
+    const onClose = () => close(null);
+    const onOutside = (e) => { if (e.target === overlay) close(null); };
+    const onKey = (e) => {
+      if (e.key === "Escape") close(null);
+      if (e.key === "Enter" && input) {
+        e.preventDefault();
+        onOk();
+      }
+    };
+
+    if (input) input.focus(); else okBtn.focus();
+    okBtn.addEventListener("click", onOk);
+    closeBtn?.addEventListener("click", onClose);
+    overlay.addEventListener("click", onOutside);
+    document.addEventListener("keydown", onKey);
+
+  });   // <== ✅ Κλείνει το new Promise
+}       // <== ✅ Κλείνει τη showConvoPrompt function

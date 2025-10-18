@@ -13,18 +13,29 @@ import {
   set,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { showConvoAlert, showConvoPrompt } from "./app.js";
 
 
 import { db, auth } from "./firebaseInit.js";
 import { watchTyping } from "./typing.js";
 
 const usersListEl = document.getElementById("usersList");
+let currentFilter = "all";
+
 const usersCountEl = document.getElementById("usersCount");
 
 // Κρατάμε state τοπικά (uid -> {displayName, state, role})
 const usersMap = new Map();
+let roomMutes = new Set();
+
 const typingState = new Map();
 
+function isAdminView() {
+  const current = auth.currentUser;
+  if (!current) return false;
+  const role = usersMap.get(current.uid)?.role || "user";
+  return role === "admin";
+}
 
 function renderList() {
   if (!usersListEl) return;
@@ -56,52 +67,52 @@ function renderList() {
 });
 
 
-  // === Δημιουργία HTML για κάθε ομάδα ===
-  const makeSection = (title, css, list) =>
-    list.length
-      ? `
-        <div class="user-group">
-          <div class="user-group-title ${css}">${title}</div>
-          ${list
-            .map(uid => {
-              const u = usersMap.get(uid);
-       const badge =
-  u.role === "admin"
-    ? `<span class="role-badge admin" title="Admin">🛡️</span>`
-    : u.role === "vip"
-    ? `<span class="role-badge vip" title="VIP">⭐</span>`
-    : "";
-const bannedIcon = u.banned ? `<span class="banned-icon" title="Banned">✋</span>` : "";
-const mutedIcon = u.muted ? `<span class="muted-icon" title="Muted">🔇</span>` : "";
+// === Δημιουργία HTML για κάθε ομάδα ===
+const makeSection = (title, css, list) =>
+  list.length
+    ? `
+      <div class="user-group">
+        <div class="user-group-title ${css}">${title}</div>
+        ${list
+          .map(uid => {
+            const u = usersMap.get(uid);
+            if (!u) return "";
 
+            const badge =
+              u.role === "admin"
+                ? `<span class="role-badge admin" title="Admin">🛡️</span>`
+                : u.role === "vip"
+                ? `<span class="role-badge vip" title="VIP">⭐</span>`
+                : "";
 
-              if (!u) return "";
-              const isYou = auth.currentUser && uid === auth.currentUser.uid;
-              const label = isYou ? `${u.displayName || "Guest"} (You)` : u.displayName || "Guest";
-              const isTyping = typingState.get(uid);
-              const typingHtml = isTyping ? `<div class="typing-indicator">✏️ Typing...</div>` : "";
-              const dotClass = u.state === "online" ? "dot online" : "dot offline";
-              return `
-                <div class="user-item" data-uid="${uid}">
-                <div class="user-item${u.muted ? ' muted' : ''}" data-uid="${uid}">
+            // === Mute & Ban icons ===
+            const isMutedHere = roomMutes.has(uid);
+            const bannedIcon  = u.banned ? `<span class="banned-icon" title="Banned">✋</span>` : "";
+            const mutedIcon   = isMutedHere ? `<span class="muted-icon" title="Muted in this room">🔇</span>` : "";
 
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="${dotClass}"></span>
-<div class="user-name">
-  ${label} ${badge} ${bannedIcon} ${mutedIcon}
-</div>
+            const isYou = auth.currentUser && uid === auth.currentUser.uid;
+            const label = isYou ? `${u.displayName || "Guest"} (You)` : u.displayName || "Guest";
 
+            const isTyping = typingState.get(uid);
+            const typingHtml = isTyping ? `<div class="typing-indicator">✏️ Typing...</div>` : "";
+            const dotClass = u.state === "online" ? "dot online" : "dot offline";
 
+            return `
+              <div class="user-item${isMutedHere ? ' muted' : ''}" data-uid="${uid}">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="${dotClass}"></span>
+                  <div class="user-name">
+                    ${label} ${badge} ${bannedIcon} ${mutedIcon}
                   </div>
-                  ${typingHtml}
                 </div>
-              `;
-            })
-            .join("")}
-        </div>`
-      : "";
+                ${typingHtml}
+              </div>
+            `;
+          })
+          .join("")}
+      </div>`
+    : "";
 
-  
   
     // === Νέα διάταξη ===
 // Online ρόλοι πρώτοι, offline όλοι στο τέλος
@@ -218,6 +229,40 @@ if (!statusLoaded || !rolesLoaded) {
 console.log("👥 Users list listener ready");
 
 }
+// === Listen per-room mutes (SAFE + Auto-refresh) ===
+function listenRoomMutes() {
+  const activeRoom = window.currentRoom || localStorage.getItem("lastRoom") || "general";
+  const mutesPath = ref(db, `v3/rooms/${activeRoom}/mutes`);
+
+  // Καθάρισε προηγούμενο listener (προληπτικά)
+  if (window._mutesUnsubscribe) window._mutesUnsubscribe();
+
+  const unsubscribe = onValue(mutesPath, (snap) => {
+    roomMutes = new Set();
+    if (snap.exists()) {
+  snap.forEach((child) => {
+    const val = child.val();
+    if (val === true || val?.value === true) {
+      roomMutes.add(child.key);
+    }
+  });
+}
+
+    renderList();
+  });
+
+  // Αποθήκευση για clean reattach
+  window._mutesUnsubscribe = () => unsubscribe();
+}
+
+// 🟢 Περιμένουμε λίγο να φορτώσει το currentRoom πριν το πρώτο attach
+window.addEventListener("load", () => {
+  setTimeout(listenRoomMutes, 1000); // τρέχει 1s μετά τη φόρτωση
+});
+
+// 🔁 Όταν αλλάζει room, ξανατρέξε τον listener
+window.addEventListener("roomChanged", listenRoomMutes);
+
 // === Typing watcher ===
 watchTyping((map) => {
   for (const [uid, val] of map.entries()) {
@@ -237,51 +282,52 @@ contextMenu.innerHTML = `
   <button id="ctxUnbanUser">✅ Unban User</button>
   <button id="ctxKickUser">👢 Kick User</button>
     <button id="ctxMuteUser">🔇 Mute User</button>
-  <button id="ctxUnmuteUser">🔈 Unmute User</button>
+  
 
 `;
 
 document.body.appendChild(contextMenu);
 
-// === Δεξί κλικ σε όνομα χρήστη (μόνο για Admin + ασφαλή τοποθέτηση) ===
-document.addEventListener("contextmenu", (e) => {
-  const userItem = e.target.closest(".user-item");
-  if (!userItem) return;
+// === Δεξί κλικ μόνο πάνω σε χρήστη (όχι στο background) ===
 
-  const currentUser = auth.currentUser;
-  const currentUserRole = usersMap.get(currentUser?.uid)?.role || "user";
+if (usersListEl) {
+  usersListEl.addEventListener("contextmenu", (e) => {
+    const item = e.target.closest(".user-item");
+    if (!item) return; // ⛔ Αν δεν πάτησες πάνω σε user, μην ανοίγεις menu
 
-const isAdmin = currentUser && currentUserRole === "admin";
-  const targetUid = userItem.dataset.uid;
+    e.preventDefault();
 
-  if (!isAdmin) return;
-  if (currentUser && currentUser.uid === targetUid) return;
+    const currentUser = auth.currentUser;
+    const currentUserRole = usersMap.get(currentUser?.uid)?.role || "user";
+    const isAdmin = currentUser && currentUserRole === "admin";
+    const targetUid = item.dataset.uid;
 
-  e.preventDefault();
+    if (!isAdmin) return;
+    if (currentUser && currentUser.uid === targetUid) return;
 
-  // === 🔹 Highlight το user-item που έγινε δεξί κλικ ===
-  document.querySelectorAll(".user-item.highlight").forEach(el => el.classList.remove("highlight"));
-  userItem.classList.add("highlight");
+    // === Highlight και εμφάνιση menu ===
+    document.querySelectorAll(".user-item.highlight").forEach(el => el.classList.remove("highlight"));
+    item.classList.add("highlight");
 
-  // === Εμφάνιση menu με ασφαλή τοποθέτηση ===
-  contextMenu.dataset.uid = targetUid;
-  contextMenu.style.display = "flex";
-  contextMenu.classList.remove("hidden");
+    contextMenu.dataset.uid = targetUid;
+    contextMenu.style.display = "flex";
+    contextMenu.classList.remove("hidden");
 
-  const menuWidth = contextMenu.offsetWidth;
-  const menuHeight = contextMenu.offsetHeight;
-  const screenW = window.innerWidth;
-  const screenH = window.innerHeight;
+    const menuWidth = contextMenu.offsetWidth;
+    const menuHeight = contextMenu.offsetHeight;
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
 
-  let posX = e.pageX;
-  let posY = e.pageY;
+    let posX = e.pageX;
+    let posY = e.pageY;
+    if (posX + menuWidth > screenW) posX = screenW - menuWidth - 10;
+    if (posY + menuHeight > screenH) posY = screenH - menuHeight - 10;
 
-  if (posX + menuWidth > screenW) posX = screenW - menuWidth - 10;
-  if (posY + menuHeight > screenH) posY = screenH - menuHeight - 10;
+    contextMenu.style.left = posX + "px";
+    contextMenu.style.top = posY + "px";
+  });
+}
 
-  contextMenu.style.left = posX + "px";
-  contextMenu.style.top = posY + "px";
-});
 
 
 // === Κλικ εκτός ή Esc => κλείσιμο ===
@@ -302,182 +348,347 @@ document.addEventListener("keydown", (e) => {
 // ============================================================================
 // CONTEXT MENU ACTIONS (Step 8 Part D – Kick User Logic)
 // ============================================================================
-
-
-// ============================================================================
-// CONTEXT MENU ACTIONS (Step 8 Part E – Role Protection)
-// ============================================================================
 contextMenu.addEventListener("click", async (e) => {
-  if (e.target.tagName !== "BUTTON") return;
   const uid = contextMenu.dataset.uid;
-  contextMenu.classList.add("hidden");
-
-  // === Check target role before action ===
-  async function isProtectedUser(uid) {
-    try {
-      const snap = await get(ref(db, "users/" + uid + "/role"));
-      const role = snap.val();
-      return role === "admin" || role === "mod";
-    } catch (err) {
-      console.error("Role check error:", err);
-      return false;
-    }
-  }
+  if (!uid) return;
 
   // === BAN USER ===
-  if (e.target.id === "ctxBanUser") {
-    if (!confirm(`⚠️ Ban this user?\n\nUID: ${uid}`)) return;
+if (e.target.id === "ctxBanUser") {
+  const resBan = await showConvoPrompt(`⚠️ Θες να κάνεις ban αυτόν τον χρήστη;`);
+  if (resBan !== "ok") return;
 
-    // 🔒 Role protection
-    if (await isProtectedUser(uid)) {
-      alert("⛔ You cannot ban another admin or moderator.");
-      return;
-    }
-
-    try {
-      await update(ref(db, "users/" + uid), { banned: true });
-
-await push(ref(db, "adminLogs"), {
-  type: "ban",                   // ή ban, unban, kick
-  targetUid: uid,
-  targetName: usersMap.get(uid)?.displayName || "Unknown User",
-  adminUid: auth.currentUser.uid,
-  adminName: auth.currentUser.displayName || "Admin",
-  action: "ban",                 // ή unmute, ban, κλπ
-  room: "pendingRoomSystem",      // 🏷️ προσωρινό μέχρι να ενεργοποιηθούν τα rooms
-  createdAt: serverTimestamp(),
-});
-
-
-      alert("✅ User has been banned and logged.");
-    } catch (err) {
-      console.error("Ban error:", err);
-      alert("❌ Ban failed — check console.");
-    }
+  // 🔒 Role protection
+  if (await isProtectedUser(uid)) {
+    showConvoAlert("⛔ Δεν μπορείς να κάνεις ban άλλον admin ή moderator.");
+    return;
   }
+
+  try {
+    // --- Πάρε αξιόπιστα το displayName ---
+    let displayName = usersMap.get(uid)?.displayName;
+
+    // 1) Αν δεν υπάρχει στο usersMap, δοκίμασε από /status
+    if (!displayName) {
+      const sSnap = await get(ref(db, `status/${uid}/displayName`));
+      if (sSnap.exists()) displayName = sSnap.val();
+    }
+    // 2) Αν πάλι δεν βρεις, δοκίμασε από /users
+    if (!displayName) {
+      const uSnap = await get(ref(db, `users/${uid}/displayName`));
+      if (uSnap.exists()) displayName = uSnap.val();
+    }
+    if (!displayName) displayName = "Unknown User";
+
+    // ✅ Αποθήκευση banned = true + διασφάλιση του displayName
+    await update(ref(db, `users/${uid}`), {
+      banned: true,
+      displayName
+    });
+
+    // ✅ Καταγραφή στο adminLogs με σωστό όνομα
+    await push(ref(db, "adminLogs"), {
+      type: "ban",
+      targetUid: uid,
+      targetName: displayName,
+      adminUid: auth.currentUser.uid,
+      adminName: auth.currentUser.displayName || "Admin",
+      action: "ban",
+      room: "pendingRoomSystem",
+      createdAt: serverTimestamp(),
+    });
+
+    showConvoAlert(`✅ Ο χρήστης "${displayName}" έγινε ban και καταγράφηκε.`);
+  } catch (err) {
+    console.error("Ban error:", err);
+    showConvoAlert("❌ Αποτυχία ban — δες κονσόλα.");
+  }
+}
+
+
 
   // === KICK USER (live disconnect) ===
-  if (e.target.id === "ctxKickUser") {
-    if (!confirm(`👢 Kick this user (force logout)?\n\nUID: ${uid}`)) return;
+if (e.target.id === "ctxKickUser") {
+  console.log("🟡 Kick clicked");
 
-    // 🔒 Role protection
-    if (await isProtectedUser(uid)) {
-      alert("⛔ You cannot kick another admin or moderator.");
-      return;
-    }
-
-    try {
-      await set(ref(db, "kicks/" + uid), {
-        kickedBy: auth.currentUser.displayName || "Admin",
-        createdAt: serverTimestamp(),
-      });
-
-      await push(ref(db, "adminLogs"), {
-  type: "kick",                   // ή ban, unban, kick
-  targetUid: uid,
-  targetName: usersMap.get(uid)?.displayName || "Unknown User",
-  adminUid: auth.currentUser.uid,
-  adminName: auth.currentUser.displayName || "Admin",
-  action: "kick",                 // ή unmute, ban, κλπ
-  room: "pendingRoomSystem",      // 🏷️ προσωρινό μέχρι να ενεργοποιηθούν τα rooms
-  createdAt: serverTimestamp(),
+  // === 1 Bubble: Reason input ===
+  const reason = await showConvoPrompt("💬 Πληκτρολόγησε reason για kick:", {
+  placeholder: "π.χ. spam, toxicity..."
 });
 
-
-      alert("👢 User has been kicked (they will disconnect now).");
-    } catch (err) {
-      console.error("Kick error:", err);
-      alert("❌ Kick failed — check console.");
-    }
+  if (!reason) {
+    console.warn("⚠️ Kick cancelled (no reason)");
+    return;
   }
+
+  const kickReason = reason.trim();
+
+  // 🔒 Προστασία για admins / moderators
+  if (await isProtectedUser(uid)) {
+    showConvoAlert("⛔ Δεν μπορείς να κάνεις kick άλλον admin ή moderator.");
+    return;
+  }
+
+  try {
+    // === Kick entry στη βάση ===
+    await set(ref(db, "kicks/" + uid), {
+      kickedBy: auth.currentUser.displayName || "Admin",
+      reason: kickReason,
+      createdAt: serverTimestamp(),
+    });
+
+    // === Καταγραφή στο adminLogs ===
+    await push(ref(db, "adminLogs"), {
+      type: "kick",
+      targetUid: uid,
+      targetName: usersMap.get(uid)?.displayName || "Unknown User",
+      adminUid: auth.currentUser.uid,
+      adminName: auth.currentUser.displayName || "Admin",
+      action: "kick",
+      reason: kickReason,
+      room: "pendingRoomSystem",
+      createdAt: serverTimestamp(),
+    });
+
+    showConvoAlert(`👢 Ο χρήστης έγινε kick.\n📝 Λόγος: ${kickReason}`);
+  } catch (err) {
+    console.error("Kick error:", err);
+    showConvoAlert("❌ Αποτυχία kick — δες κονσόλα.");
+  }
+}
+
+
+
+  
     // === UNBAN USER ===
-  if (e.target.id === "ctxUnbanUser") {
-    if (!confirm(`✅ Unban this user?\n\nUID: ${uid}`)) return;
+if (e.target.id === "ctxUnbanUser") {
+  const resUnban = await showConvoPrompt(`✅ Θες να κάνεις unban αυτόν τον χρήστη;`);
+  if (resUnban !== "ok") return;
 
-    if (await isProtectedUser(uid)) {
-      alert("⛔ You cannot unban another admin or moderator.");
-      return;
-    }
-
-    try {
-      await update(ref(db, "users/" + uid), { banned: false });
-
-      await push(ref(db, "adminLogs"), {
-  type: "unban",                   // ή ban, unban, kick
-  targetUid: uid,
-  targetName: usersMap.get(uid)?.displayName || "Unknown User",
-  adminUid: auth.currentUser.uid,
-  adminName: auth.currentUser.displayName || "Admin",
-  action: "unban",                 // ή unmute, ban, κλπ
-  room: "pendingRoomSystem",      // 🏷️ προσωρινό μέχρι να ενεργοποιηθούν τα rooms
-  createdAt: serverTimestamp(),
-});
-
-      alert("✅ User has been unbanned and logged.");
-    } catch (err) {
-      console.error("Unban error:", err);
-      alert("❌ Unban failed — check console.");
-    }
+  if (await isProtectedUser(uid)) {
+    showConvoAlert("⛔ Δεν μπορείς να κάνεις unban άλλον admin ή moderator.");
+    return;
   }
-  // === MUTE USER ===
-  if (e.target.id === "ctxMuteUser") {
-    if (!confirm(`🔇 Mute this user?\n\nUID: ${uid}`)) return;
 
-    // 🔒 Role protection
-    if (await isProtectedUser(uid)) {
-      alert("⛔ You cannot mute another admin or moderator.");
+  try {
+    await update(ref(db, "users/" + uid), { banned: false });
+
+    await push(ref(db, "adminLogs"), {
+      type: "unban",
+      targetUid: uid,
+      targetName: usersMap.get(uid)?.displayName || "Unknown User",
+      adminUid: auth.currentUser.uid,
+      adminName: auth.currentUser.displayName || "Admin",
+      action: "unban",
+      room: "pendingRoomSystem",
+      createdAt: serverTimestamp(),
+    });
+
+    showConvoAlert("✅ Ο χρήστης έγινε unban και καταγράφηκε.");
+  } catch (err) {
+    console.error("Unban error:", err);
+    showConvoAlert("❌ Αποτυχία unban — δες κονσόλα.");
+  }
+}
+
+  // === MUTE USER (Convo Bubble) ===
+if (e.target.id === "ctxMuteUser") {
+  const confirmMute = await showConvoPrompt(`🔇 Θες να κάνεις mute αυτόν τον χρήστη;`);
+  if (confirmMute !== "ok") return;
+
+  const roomName = window.currentRoom || localStorage.getItem("lastRoom") || "general";
+
+  // === γράψε το mute στο Firebase (με set, όχι update) ===
+  await set(ref(db, `v3/rooms/${roomName}/mutes/${uid}`), true);
+
+  await push(ref(db, "adminLogs"), {
+    type: "mute",
+    targetUid: uid,
+    targetName: usersMap.get(uid)?.displayName || "Unknown",
+    adminUid: auth.currentUser.uid,
+    adminName: auth.currentUser.displayName || "Admin",
+    action: "mute",
+    room: roomName,
+    createdAt: serverTimestamp(),
+  });
+
+  showConvoAlert(`🔇 Ο χρήστης έγινε mute επιτυχώς.`);
+}
+
+
+// === Helper: Έλεγχος προστατευμένων χρηστών (Admins / VIP / Self) ===
+async function isProtectedUser(uid) {
+  const current = auth.currentUser;
+  if (!current) return false;
+
+  // Μην αφήνεις να κάνει kick/ban τον εαυτό του ή τον MysteryMan
+  if (uid === current.uid) return true;
+  const target = usersMap.get(uid);
+  if (!target) return false;
+
+  const name = (target.displayName || "").toLowerCase();
+  return (
+    name === "mysteryman" ||
+    name.includes("admin") ||
+    name.includes("moderator")
+  );
+}
+// ============================================================================
+// BANNED USERS
+// ============================================================================
+
+
+
+
+// === Elements ===
+const bannedBtn = document.getElementById("showBannedBtn");
+const bannedModal = document.getElementById("bannedModal");
+const bannedList = document.getElementById("bannedUsersList");
+const closeBannedBtn = document.getElementById("closeBannedBtn");
+
+// === Open Modal ===
+if (bannedBtn) {
+  bannedBtn.addEventListener("click", () => {
+    bannedModal.classList.remove("hidden");
+    loadBannedUsers();
+  });
+}
+
+// === Close Modal ===
+if (closeBannedBtn) {
+  closeBannedBtn.addEventListener("click", () => {
+    bannedModal.classList.add("hidden");
+  });
+}
+
+// === Load Banned Users ===
+function loadBannedUsers() {
+  const usersRef = ref(db, "/users");
+
+  onValue(usersRef, (snap) => {
+    bannedList.innerHTML = "";
+
+    if (!snap.exists()) {
+      bannedList.innerHTML = "<p class='muted'>⚠️ Δεν βρέθηκαν χρήστες.</p>";
       return;
     }
 
-    try {
-      await update(ref(db, "users/" + uid), { muted: true });
+    let found = false;
+
+    snap.forEach((child) => {
+      const user = child.val();
+      const uid = child.key;
+      console.log("👁️ User check:", uid, "banned =", user.banned, "type =", typeof user.banned);
+
+
+      // ✅ Αν ο χρήστης είναι banned
+      if (user.banned === true || user.banned === "true") {
+
+        found = true;
+        const div = document.createElement("div");
+        div.className = "banned-item";
+        div.innerHTML = `
+          <span>🚫 ${user.displayName || "Unknown User"}</span>
+          <button data-uid="${uid}" class="unban-btn">Unban</button>
+        `;
+        bannedList.appendChild(div);
+      }
+    });
+
+    if (!found) {
+      bannedList.innerHTML = "<p class='muted'>✅ Δεν υπάρχουν banned χρήστες.</p>";
+    }
+
+    // === Unban click actions ===
+    bannedList.querySelectorAll(".unban-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const uid = e.target.dataset.uid;
+        const res = await showConvoPrompt(`✅ Θες να κάνεις unban αυτόν τον χρήστη;`);
+        if (res !== "ok") return;
+        await update(ref(db, `users/${uid}`), { banned: false });
+        showConvoAlert("✅ Ο χρήστης έγινε unban.");
+          });
+    });
+  });
+} // ✅ κλείνει τη loadBannedUsers
+
+}); // ✅ κλείνει το contextMenu.addEventListener("click", async (e) => { ... })
+
+// ✅ τέλος αρχείου usersList.js
+// ============================================================================
+// MUTED USERS (New Modal)
+// ============================================================================
+
+// === Elements ===
+const mutedBtn = document.getElementById("showMutedBtn");
+const mutedModal = document.getElementById("mutedModal");
+const mutedList = document.getElementById("mutedUsersList");
+const closeMutedBtn = document.getElementById("closeMutedBtn");
+
+// === Open Modal ===
+if (mutedBtn) {
+  mutedBtn.addEventListener("click", () => {
+    mutedModal.classList.remove("hidden");
+    loadMutedUsers();
+  });
+}
+
+// === Close Modal ===
+if (closeMutedBtn) {
+  closeMutedBtn.addEventListener("click", () => {
+    mutedModal.classList.add("hidden");
+  });
+}
+
+// === Load Muted Users (per room) ===
+function loadMutedUsers() {
+  const room = window.currentRoom || localStorage.getItem("lastRoom") || "general";
+  const mutedRef = ref(db, `v3/rooms/${room}/mutes`);
+
+  onValue(mutedRef, (snap) => {
+    mutedList.innerHTML = "";
+
+    if (!snap.exists()) {
+      mutedList.innerHTML = "<p class='muted'>✅ Δεν υπάρχουν muted χρήστες σε αυτό το room.</p>";
+      return;
+    }
+
+    snap.forEach((child) => {
+      const uid = child.key;
+const user = usersMap.get(uid);
+const name = user?.displayName || uid;
+
+const div = document.createElement("div");
+div.className = "banned-item";
+div.innerHTML = `
+  <span>🔇 ${name}</span>
+  <button data-uid="${uid}" class="unmute-btn">Unmute</button>
+`;
+
+      mutedList.appendChild(div);
+    });
+
+    mutedList.querySelectorAll(".unmute-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const uid = e.target.dataset.uid;
+        const confirmUnmute = await showConvoPrompt(`🔈 Θες να κάνεις unmute αυτόν τον χρήστη;`);
+        if (confirmUnmute !== "ok") return;
+        await set(ref(db, `v3/rooms/${room}/mutes/${uid}`), null);
+
+        const displayName = usersMap.get(uid)?.displayName || "Unknown User";
 
 await push(ref(db, "adminLogs"), {
-  type: "mute",                   // ή ban, unban, kick
+  type: "unmute",
   targetUid: uid,
-  targetName: usersMap.get(uid)?.displayName || "Unknown User",
+  targetName: displayName,
   adminUid: auth.currentUser.uid,
   adminName: auth.currentUser.displayName || "Admin",
-  action: "mute",                 // ή unmute, ban, κλπ
-  room: "pendingRoomSystem",      // 🏷️ προσωρινό μέχρι να ενεργοποιηθούν τα rooms
+  action: "unmute",
+  room,
   createdAt: serverTimestamp(),
 });
 
-      alert("🔇 User muted successfully.");
-    } catch (err) {
-      console.error("Mute error:", err);
-      alert("❌ Mute failed — check console.");
-    }
-  }
-
-  // === UNMUTE USER ===
-  if (e.target.id === "ctxUnmuteUser") {
-    if (!confirm(`🔈 Unmute this user?\n\nUID: ${uid}`)) return;
-
-    if (await isProtectedUser(uid)) {
-      alert("⛔ You cannot unmute another admin or moderator.");
-      return;
-    }
-
-    try {
-      await update(ref(db, "users/" + uid), { muted: false });
-
-await push(ref(db, "adminLogs"), {
-  type: "mute",                   // ή ban, unban, kick
-  targetUid: uid,
-  targetName: usersMap.get(uid)?.displayName || "Unknown User",
-  adminUid: auth.currentUser.uid,
-  adminName: auth.currentUser.displayName || "Admin",
-  action: "unmute",                 // ή unmute, ban, κλπ
-  room: "pendingRoomSystem",      // 🏷️ προσωρινό μέχρι να ενεργοποιηθούν τα rooms
-  createdAt: serverTimestamp(),
-});
-
-      alert("🔈 User unmuted successfully.");
-    } catch (err) {
-      console.error("Unmute error:", err);
-      alert("❌ Unmute failed — check console.");
-    }
-  }
-
-}); // ✅ <--- Κλείνει σωστά το event listener
+        showConvoAlert("🔈 Ο χρήστης έγινε unmute.");
+      });
+    });
+  });
+}
