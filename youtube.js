@@ -21,14 +21,15 @@ export function initYouTubePanel() {
 
   // === Εμφάνιση κουμπιού για συνδεδεμένους ===
   auth.onAuthStateChanged((user) => {
-    if (user) {
-      youtubeBtn.classList.remove("hidden");
-      startWatchingMessages();
-    } else {
-      youtubeBtn.classList.add("hidden");
-      youtubePanel.classList.add("hidden");
-    }
-  });
+  if (user) {
+    youtubeBtn.classList.remove("hidden");
+    // ❌ μην ξεκινάς listener εδώ — θα ξεκινήσει όταν αλλάξει room
+  } else {
+    youtubeBtn.classList.add("hidden");
+    youtubePanel.classList.add("hidden");
+  }
+});
+
 
   // === Κουμπί YouTube Panel ===
   youtubeBtn?.addEventListener("click", () => {
