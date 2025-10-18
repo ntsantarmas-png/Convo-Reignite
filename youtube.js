@@ -115,33 +115,54 @@ function extractVideoId(url) {
   }
 }
 
-// ===================== Εμφάνιση YouTube Player & ενημέρωση Firebase =====================
+// ===================== Εμφάνιση YouTube Player με κουμπί ▶ =====================
 async function showVideo(videoId) {
   if (!videoId) return;
   currentVideoId = videoId;
   youtubePanel.classList.remove("hidden");
 
+  // 🎬 Εμφάνιση preview με thumbnail + κουμπί "Παίξε"
+  const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
   youtubeContent.innerHTML = `
-  <iframe width="100%" height="200"
-    src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allow="autoplay; encrypted-media"
-    allowfullscreen>
-  </iframe>
-`;
+    <div class="yt-preview" style="position:relative; cursor:pointer;">
+      <img src="${thumbnail}" alt="YouTube thumbnail" style="width:100%; border-radius:8px;">
+      <button id="playBtn" style="
+        position:absolute; top:50%; left:50%;
+        transform:translate(-50%,-50%);
+        background:rgba(0,0,0,0.6);
+        border:none; border-radius:50%;
+        width:60px; height:60px;
+        font-size:26px; color:white;
+        cursor:pointer;
+      ">▶</button>
+    </div>
+  `;
 
-  console.log("🎵 YouTube video loaded:", videoId);
+  // 🎵 Όταν πατηθεί το κουμπί "▶", παίζει το βίντεο με ήχο
+  const playBtn = document.getElementById("playBtn");
+  playBtn.addEventListener("click", () => {
+    youtubeContent.innerHTML = `
+      <iframe width="100%" height="200"
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="autoplay; encrypted-media"
+        allowfullscreen>
+      </iframe>
+    `;
+  });
 
+  console.log("🎵 YouTube preview loaded:", videoId);
+
+  // === Ενημέρωση στο Firebase (ίδιο με πριν) ===
   try {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) return; // Guests excluded
 
     const name = user.displayName || "Unknown";
     const room = window.currentRoom || "general";
-    const title = `https://youtu.be/${videoId}`; // προσωρινά link
+    const title = `https://youtu.be/${videoId}`;
 
-    // === Αποθήκευση "current video" στο Firebase ===
     await set(ref(db, "v3/youtube/current"), {
       videoId,
       title,
@@ -150,20 +171,18 @@ async function showVideo(videoId) {
       createdAt: serverTimestamp(),
     });
 
-    // === Εμφάνιση system μηνύματος στο chat ===
     const msgRef = ref(db, `v3/messages/${room}`);
     await push(msgRef, {
-      text: `🎵 ${name} ακούει: ${title}`,
+      text: `🎵 ${name} μοιράστηκε: ${title}`,
       system: true,
       createdAt: serverTimestamp(),
     });
 
-    console.log("📡 Shared YouTube update sent to DB:", title);
+    console.log("📡 Shared YouTube update sent:", title);
   } catch (err) {
     console.error("❌ Error saving YouTube status:", err);
   }
 }
-
 // ===================== Διακοπή βίντεο =====================
 function stopVideo() {
   youtubeContent.innerHTML = `<p class="muted">🎵 Κανένα βίντεο – στείλε ένα YouTube link στο chat!</p>`;
