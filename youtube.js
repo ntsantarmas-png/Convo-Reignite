@@ -43,9 +43,12 @@ export function initYouTubePanel() {
 
   // === Όταν αλλάζει το room ===
   window.addEventListener("roomChanged", (e) => {
-    console.log("🎧 YouTube listener switching to room:", e.detail.roomId);
-    startWatchingMessages(e.detail.roomId);
-  });
+  console.log("🎧 YouTube listener switching to room:", e.detail.roomId);
+  startWatchingMessages(e.detail.roomId);
+});
+
+// ✅ Auto-start on default room
+startWatchingMessages("general");
 }
 
 // ===================== Ανίχνευση YouTube Links =====================
