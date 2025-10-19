@@ -201,3 +201,7 @@ window.addEventListener("playYouTubeVideo", (e) => {
     console.warn("⚠️ No valid video ID found in shared URL:", url);
   }
 });
+// === Initialize YouTube Panel ===
+window.addEventListener("load", () => {
+  initYouTubePanel();
+});
