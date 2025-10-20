@@ -11,3 +11,4 @@ export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 console.log("✅ Firebase initialized");
+
