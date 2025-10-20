@@ -1,5 +1,5 @@
 // ===================== Emoji Panel — Step 4.2 (Giphy Integrated) =====================
-import { auth, db } from "../firebaseInit.js";
+import { auth, db } from "./firebaseInit.js";
 import { fetchTrending, searchGiphy } from "./giphy.js";
 
 import { ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
