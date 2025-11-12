@@ -49,15 +49,22 @@ onValue(userRef, (snap) => {
   const data = snap.val() || {};
 
   // καθάρισε παλιές τιμές και γέμισε με τις νέες
-  for (const k in currentUserData) delete currentUserData[k];
-  Object.assign(currentUserData, data, { uid: user.uid });
+for (const k in currentUserData) delete currentUserData[k];
+Object.assign(currentUserData, data, { uid: user.uid });
 
-  // ενημέρωση για όποιο module ενδιαφέρεται (π.χ. profileModal)
-  window.dispatchEvent(
-    new CustomEvent("currentUserUpdated", { detail: { ...currentUserData } })
-  );
+// ενημέρωση για όποιο module ενδιαφέρεται (π.χ. profileModal)
+window.dispatchEvent(
+  new CustomEvent("currentUserUpdated", { detail: { ...currentUserData } })
+);
 
-  console.log("👤 currentUserData updated:", currentUserData);
+// ✅ Αν έχουμε πλήρη στοιχεία χρήστη, στείλε event "userReady" μία φορά
+if (data.displayName && !window.__userReadyOnce) {
+  window.__userReadyOnce = true;
+  window.dispatchEvent(new Event("userReady"));
+  console.log("🚀 userReady event dispatched");
+}
+
+console.log("👤 currentUserData updated:", currentUserData);
 });
 
   // ===============================================================
