@@ -83,10 +83,17 @@ if (user.isAnonymous || (user.displayName || "").toLowerCase() === "guest") {
   });
 }
 
+         
 // ============================================================
-// 🚀 Wait for userReady before initializing Presence
+// 🚀 Wait for userReady before initializing Presence (single run)
 // ============================================================
 window.addEventListener("userReady", () => {
+  if (window.__presenceInitialized) {
+    console.log("⚙️ Presence already initialized — skipping duplicate call.");
+    return;
+  }
+  window.__presenceInitialized = true;
+
   console.log("✅ userReady received → initializing presence...");
   setupPresence();
 });
