@@ -693,9 +693,11 @@ deleteBtn?.addEventListener("click", async () => {
 });
 
 // ============================================================================
-// 🏁 Initial Load
+// 🏁 Initial Load — Wait for userReady
 // ============================================================================
-(async () => {
+window.addEventListener("userReady", async () => {
+  console.log("✅ userReady received → initializing Rooms panel...");
+
   const snap = await get(roomsRef);
 
   // Αν δεν υπάρχει καθόλου /rooms → δημιούργησε το general
@@ -738,5 +740,5 @@ deleteBtn?.addEventListener("click", async () => {
     renderPulseItems(pulseItemsDefault);
   }
 
-  console.log("🏠 Rooms panel initialized (Realtime sync)");
-})();
+  console.log("🏠 Rooms panel initialized (after userReady)");
+});
