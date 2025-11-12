@@ -1,0 +1,4200 @@
+/* ============================================================================
+   Convo — Clean Base (No Rooms) — STEP 1 (Structure & Layout only)
+   Notes:
+   - Minimal dark theme + neon accents (#2d8cff)
+   - No Rooms panel; only Topbar, Auth, Chat, Users panel placeholder
+   - Greek comments + English class/ids
+============================================================================ */
+:root{
+  --bg: #0b0f14;
+  --surface: #0e141b;
+  --text: #e6eef7;
+  --muted: #9db2c7;
+  --primary: #2d8cff;
+  --ring: rgba(45,140,255,0.55);
+  --border: rgba(255,255,255,0.08);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: radial-gradient(1200px 800px at 20% -10%, rgba(45,140,255,0.08), transparent),
+              radial-gradient(800px 600px at 120% 30%, rgba(45,140,255,0.06), transparent),
+              var(--bg);
+  color:var(--text);
+  font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell;
+}
+body.auth-active #roomsToggleBtn,
+body.auth-active #usersToggleBtn {
+  display: none !important;
+}
+
+
+/* ===================== Utilities ===================== */
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+.badge{
+  background: rgba(45,140,255,0.15);
+  border:1px solid rgba(45,140,255,0.35);
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+/* ===================== Buttons ===================== */
+.btn{
+  appearance:none;
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 0 0 0 transparent;
+  transition:transform .05s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.btn:disabled{opacity:.6; cursor:not-allowed}
+.btn:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
+.btn:active{transform:translateY(1px)}
+
+.btn.ghost{
+  background:transparent;
+  border:1px solid var(--border);
+}
+
+/* Icon-only button */
+.icon-btn{
+  background:transparent;
+  border:1px solid var(--border);
+  width:40px; height:40px;
+  border-radius:12px;
+  cursor:pointer;
+}
+/* === Admin / Danger button === */
+.btn.danger { background:#ef4444; }
+.btn.danger:hover { opacity: .9; }
+
+/* ===================== Topbar ===================== */
+#topbar{
+  position:fixed; inset:0 0 auto 0;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:saturate(120%) blur(10px);
+  border-bottom:1px solid var(--border);
+  z-index:50;
+}
+#topbar .brand{display:flex; align-items:center; gap:8px}
+#topbar .logo{filter: drop-shadow(0 0 8px rgba(45,140,255,0.6));}
+#topbar .title{font-weight:800; letter-spacing:.3px}
+
+/* ===================== Auth Container ===================== */
+#authContainer{
+  position:fixed; inset:56px 0 0 0; /* below topbar */
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px;
+  gap:18px;
+  text-align:center;
+}
+.auth-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  width:min(740px, 95vw);
+}
+.auth-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+}
+.auth-section h3{margin:6px 0 12px 0}
+.grid-2x2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.grid-2x2 input, .grid-2x2 button{
+  width:100%;
+}
+input, textarea{
+  border:1px solid var(--border);
+  background:#0c1218;
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+}
+input:focus, textarea:focus{outline:none; box-shadow:0 0 0 3px var(--ring)}
+
+/* ===================== Rooms Panel (Left) ===================== */
+.panel.left {
+  position: fixed;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  width: 240px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: saturate(120%) blur(6px);
+  padding: 8px;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  z-index: 40;
+  border-right: 1px solid rgba(45, 140, 255, 0.25);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+
+/* Όταν είναι ορατό */
+.panel.left.visible {
+  transform: translateX(0);
+}
+
+/* Toggle κουμπί */
+.panel-toggle {
+  position: fixed;
+  top: 60px;
+  left: 12px;
+  background: rgba(45, 140, 255, 0.2);
+  border: 1px solid rgba(45, 140, 255, 0.5);
+  color: #2d8cff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 45;
+  transition: background 0.2s;
+}
+.panel-toggle:hover {
+  background: rgba(45, 140, 255, 0.35);
+}
+
+
+/* ===================== Chat Container ===================== */
+
+.scroll-area{
+  flex:1;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px;
+  background:var(--surface);
+}
+#messages.scroll-area {
+  margin-top: 10px; /* 🔽 Κατεβάζει λίγο το main chat κάτω από την topbar */
+}
+
+.empty-hint{opacity:.7; text-align:center; margin-top:20px}
+
+/* Input bar (Discord-like) */
+.inputbar{
+  display:grid;
+  grid-template-columns:40px 1fr auto;
+  gap:8px;
+  align-items:end;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:8px;
+  background:var(--surface);
+}
+#messageInput{
+  resize:none;
+  max-height:140px;
+  min-height:40px;
+  overflow:auto;
+}
+
+/* ===================== Users Panel (Right) ===================== */
+.panel.right {
+  position: fixed;
+  inset: 56px 0 0 auto;
+  width: 250px;
+  border-left: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: saturate(120%) blur(6px);
+  padding: 6px 4px 6px 10px;  /* 🟢 πιο αριστερή στοίχιση */
+  overflow-y: auto;           /* 🟢 ενεργοποιεί scroll */
+  overflow-x: hidden;
+  z-index: 55; /* 🧩 φέρνει το users panel πάνω από το main chat */
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+.panel.right:not(.visible) {
+  transform: translateX(100%);
+  overflow-y: hidden !important;
+}
+
+/* Κουμπί toggle δεξιά */
+.panel-toggle.right {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  left: auto;
+  background: rgba(45, 140, 255, 0.2);
+  border: 1px solid rgba(45, 140, 255, 0.5);
+  color: #2d8cff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 60;
+  transition: background 0.2s;
+}
+.panel-toggle.right:hover {
+  background: rgba(45, 140, 255, 0.35);
+}
+
+/* ===================== Responsive ===================== */
+@media (max-width: 920px){
+  #chatContainer{inset:56px 0 0 0}
+  .panel.right{display:none}
+  .auth-grid{grid-template-columns:1fr}
+  .grid-2x2{grid-template-columns:1fr}
+}
+/* ===================== Chat Messages ===================== */
+.message {
+  padding: 6px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+.msg-user {
+  font-weight: 600;
+  color: var(--primary);
+  margin-right: 6px;
+}
+.msg-text {
+  color: var(--text);
+}
+.msg-time {
+  float: right;
+  opacity: 0.5;
+  font-size: 12px;
+}
+.msg-text {
+  display: inline-block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.msg-user {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.msg-time {
+  font-size: 12px;
+  opacity: 0.5;
+}
+/* ===================== Users list styles (presence) ===================== */
+.user-item{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  padding:8px 6px;
+  border-bottom:1px dashed rgba(255,255,255,0.05);
+}
+
+.user-item .user-name{flex:1}
+.user-item .user-state{opacity:.6; font-size:12px}
+.dot{
+  width:10px; height:10px; border-radius:999px;
+  box-shadow:0 0 0 2px rgba(0,0,0,0.25);
+}
+.dot.online{ background:#22c55e; }   /* πράσινο */
+.dot.offline{ background:#64748b; }  /* γκρι */
+/* ===================== Userlist Left Align (final fix) ===================== */
+/* ===================== Userlist Left Align (Convo Step 7 Final) ===================== */
+#usersPanel {
+  padding-left: 0 !important;   /* ➖ ακόμα πιο αριστερά όλο το περιεχόμενο */
+}
+
+.user-item {
+  margin-left: -28px !important; /* ➖ μικρό “τραβηγμα” αριστερά */
+  padding-left: 0 !important;   /* κρατά avatar + dot + όνομα ευθυγραμμισμένα */
+}
+
+/* ===================== Users Header Counter Align ===================== */
+#usersPanel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+#usersPanel .panel-header h2 {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 15px;
+}
+
+#usersPanel .user-count {
+  position: relative;
+  top: -2px;   /* 🟢 ανεβάζει ελαφρώς το "2" */
+}
+
+/* ===================== Role Badges ===================== */
+.role-badge {
+  margin-left: 4px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.role-badge.admin { color: #ff4d4d; }  /* Κόκκινο για Admin */
+.role-badge.vip { color: #ffd700; }    /* Χρυσό για VIP */
+
+.banned-icon {
+  color: #ff4d4d;
+  font-size: 14px;
+  margin-left: 4px;
+  cursor: default;
+  opacity: 0.9;
+}
+
+
+/* ===================== Users List Role Groups ===================== */
+/* ===================== Users List Role Groups (Convo Glow Polish) ===================== */
+.user-group-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  margin: 10px 0 6px 4px;
+  padding: 4px 8px;
+  border-left: 3px solid rgba(45,140,255,0.35);
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(45,140,255,0.15);
+  transition: all 0.25s ease;
+}
+
+/* === Glow ανά ρόλο === */
+.user-group-title.admin {
+  color: #ff4d4d;
+  border-left-color: rgba(255,77,77,0.4);
+  box-shadow: 0 0 10px rgba(255,77,77,0.15);
+}
+.user-group-title.vip {
+  color: #ffd700;
+  border-left-color: rgba(255,215,0,0.4);
+  box-shadow: 0 0 10px rgba(255,215,0,0.15);
+}
+.user-group-title.user {
+  color: #2d8cff;
+  border-left-color: rgba(45,140,255,0.4);
+  box-shadow: 0 0 10px rgba(45,140,255,0.15);
+}
+.user-group-title.offline {
+  color: #9ca3af;
+  border-left-color: rgba(180,180,180,0.25);
+  box-shadow: none;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* === Hover animation === */
+.user-group-title:hover {
+  transform: translateX(3px);
+  box-shadow: 0 0 12px rgba(45,140,255,0.25);
+}
+
+
+/* ===================== TYPING ===================== */
+.typing-indicator {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-left: 24px;
+  margin-top: 2px;
+  color: var(--muted);
+  animation: blinkTyping 1s infinite;
+  display: block;
+}
+
+@keyframes blinkTyping {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.35; }
+}
+
+/* === FIX: Proper chat resizing when toggling panels === */
+#chatContainer {
+  position: fixed;
+    top: 94px; /* 56 (topbar) + 38 (tabs) */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+/* Όταν ανοίγει το Rooms Panel */
+.panel.left.visible ~ #chatContainer {
+  left: 240px;
+}
+
+/* Όταν ανοίγει το Users Panel */
+.panel.right.visible ~ #chatContainer {
+  right: 250px;
+}
+
+/* Όταν ανοίγουν και τα δύο */
+.panel.left.visible ~ .panel.right.visible ~ #chatContainer {
+  left: 240px;
+  right: 250px;
+}
+
+/* ===================== SYSTEM LOGS MODAL ===================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  width: min(600px, 90vw);
+  max-height: 80vh;
+  overflow: hidden; /* ✅ μόνο εσωτερικό scroll */
+  box-shadow: 0 0 25px rgba(45,140,255,0.25);
+}
+
+.modal-content {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+
+
+.log-entry {
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  padding: 6px 0;
+  font-size: 14px;
+}
+.log-entry strong {
+  color: var(--primary);
+}
+.btn.small {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+/* ===================== ✏️ Rename Logs Modal ===================== */
+#renameModal .modal-box {
+  width: 520px;
+  max-height: 80vh;
+  background: rgba(25, 25, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.35);
+  animation: fadeIn 0.25s ease-out;
+  overflow: hidden;
+}
+
+#renameModal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(0, 200, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  color: #b8e9ff;
+  text-shadow: 0 0 6px #00c8ff;
+}
+
+#renameModal .modal-content {
+  padding: 12px 16px;
+  overflow-y: auto;
+  max-height: 65vh;
+  scrollbar-width: thin;
+}
+
+.rename-log {
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  transition: background 0.2s ease;
+}
+
+.rename-log:hover {
+  background: rgba(0, 200, 255, 0.05);
+}
+
+.rename-log .log-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.rename-log .log-meta {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+#renameModal.fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+#renameModal.fade-out {
+  animation: fadeOut 0.25s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+/* ===================== ADMIN MENU BUTTON ===================== */
+#adminMenuBtn {
+  font-size: 18px;
+  color: #2d8cff;
+}
+#adminMenuBtn:hover {
+  opacity: 0.8;
+}
+
+/* ===================== PROFILE BUTTON (Topbar) ===================== */
+#profileBtn {
+  font-size: 18px;
+  color: #fff;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#profileBtn:hover {
+  background: rgba(45,140,255,0.25);
+  box-shadow: 0 0 8px rgba(45,140,255,0.4);
+}
+
+/* ===================== ADMIN CONTEXT MENU ===================== */
+#adminContextMenu {
+  position: absolute;
+  background: rgba(20, 25, 35, 0.95);
+  border: 1px solid rgba(45, 140, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  backdrop-filter: blur(6px);
+}
+#adminContextMenu.hidden {
+  display: none;
+}
+#adminContextMenu button {
+  background: none;
+  border: none;
+  color: #fff;
+  text-align: left;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+#adminContextMenu button:hover {
+  background: rgba(45, 140, 255, 0.2);
+}
+/* ===================== USER RIGHT-CLICK HIGHLIGHT ===================== */
+.user-item.highlight {
+  background: rgba(45, 140, 255, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(45, 140, 255, 0.4);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+/* ===================== SYSTEM LOGS POLISH (Step 9G) ===================== */
+#systemLogsFilter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filter-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(45,140,255,0.2);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+.filter-btn.active {
+  background: rgba(45,140,255,0.25);
+  border-color: rgba(45,140,255,0.6);
+}
+.filter-btn:hover {
+  background: rgba(45,140,255,0.1);
+}
+
+
+.log-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+  transition: background 0.2s ease;
+}
+.log-item:hover {
+  background: rgba(255,255,255,0.07);
+}
+.log-line {
+  display: flex;
+  justify-content: space-between;
+}
+.log-line.small {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.log-line.tiny {
+  font-size: 12px;
+  opacity: 0.6;
+}
+/* ===================== MUTE STATE ===================== */
+.muted-input {
+  opacity: 0.6;
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.3);
+}
+/* ===================== MUTED USER INDICATOR ===================== */
+.user-item.muted {
+  opacity: 0.6;
+}
+
+.user-item .muted-icon {
+  color: #ff4d4d;
+  margin-left: 4px;
+  font-size: 14px;
+  vertical-align: middle;
+  opacity: 0.9;
+}
+
+.log-item[data-type="mute"] {
+  border-color: rgba(255, 102, 204, 0.5);
+  background: rgba(255, 102, 204, 0.07);
+}
+/* ===================== Rooms List ===================== */
+#roomsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.room-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(45, 140, 255, 0.15);
+}
+
+.room-item.active {
+  background: rgba(45, 140, 255, 0.35);
+  color: #2d8cff;
+  font-weight: 600;
+}
+.room-item.active-room {
+  background: rgba(45,140,255,0.25);
+  border: 1px solid rgba(45,140,255,0.5);
+  box-shadow: 0 0 10px rgba(45,140,255,0.3);
+  transition: all 0.2s ease;
+}
+.rooms-controls {
+  margin-top: 25px; /* απόσταση από toggle */
+  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.rooms-controls button {
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.btn.small {
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn.small.danger {
+  background: rgba(255, 60, 60, 0.15);
+  border: 1px solid rgba(255, 60, 60, 0.4);
+  color: #ff6060;
+}
+
+/* ===================== CONVO BUBBLE CORE ===================== */
+
+.bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bubble-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.bubble-close {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.bubble-content {
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.bubble-actions {
+  text-align: right;
+}
+
+/* === Animations === */
+.bubble-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ===================== BANNED USERS ===================== */
+
+.banned-list {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.banned-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.banned-item button {
+  background: #2a7cff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #fff;
+  cursor: pointer;
+}
+.banned-item button:hover {
+  background: #1a5cd6;
+}
+/* === SINGLE MODAL SCROLL FIX === */
+body.modal-open {
+  overflow: hidden !important; /* κλειδώνει το body */
+}
+
+.modal-box {
+  overflow: hidden;
+}
+
+.modal-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+/* === Show room toggle only when chat is visible === */
+#roomsToggleBtn {
+  display: none;
+}
+
+/* ✅ όταν το chat γίνει ορατό, τότε να φαίνεται το κουμπί */
+body.chat-active #roomsToggleBtn {
+  display: inline-block;
+}
+/* === Show Banned Users button only in chat mode === */
+#showBannedBtn {
+  display: none;
+}
+body.chat-active #showBannedBtn {
+  display: inline-block;
+}
+/* ===================== YouTube Panel ===================== */
+.youtube-panel {
+  position: fixed;
+  top: 80px;
+  left: 255px;
+  width: 360px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  color: #fff;
+  z-index: 120;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, bottom 0.25s ease;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.youtube-panel.hidden {
+    display: none !important;   /* 👈 προσθέτεις αυτή τη γραμμή */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+.youtube-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+.youtube-content {
+  padding: 12px;
+  text-align: center;
+  min-height: 200px;
+}
+
+/*.youtube-panel:not(.hidden) {
+  bottom: 80px;
+  opacity: 1;
+}*/
+.system-message {
+  text-align: center;
+  opacity: 0.8;
+  font-style: italic;
+  color: #ffcc66;
+  margin: 6px 0;
+}
+.system-message a {
+  color: #66b3ff;
+  text-decoration: none;
+}
+.system-message a:hover {
+  text-decoration: underline;
+}
+/* ===================== Emoji Panel Base ===================== */
+/* ===================== EMOJI PANEL POLISH ===================== */
+.emoji-panel {
+  position: absolute;
+  bottom: 85px; /* ⬆️ σήκωσε λίγο το panel πάνω από την input bar */
+  left: 15px;
+  width: 460px;
+  background: rgba(20, 20, 20, 0.9);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 14px;
+  box-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+  padding: 6px 8px;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 200;
+}
+
+/* --- Κύρια Tabs (Emoji | GIFs | Stickers) --- */
+.emoji-main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.emoji-main-tabs .main-tab-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #ccc;
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.emoji-main-tabs .main-tab-btn.active {
+  background: rgba(0, 180, 255, 0.25);
+  color: #fff;
+  box-shadow: 0 0 6px rgba(0, 180, 255, 0.6);
+}
+
+.emoji-main-tabs .main-tab-btn:hover {
+  color: #fff;
+}
+
+/* --- Υποκατηγορίες (Smileys | Animals | Food | Activities | Symbols) --- */
+.emoji-sub-tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.emoji-sub-tabs.hidden {
+  display: none;
+}
+
+.emoji-sub-tabs .sub-tab-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #aaa;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.emoji-sub-tabs .sub-tab-btn.active {
+  background: rgba(0, 180, 255, 0.25);
+  color: #fff;
+  box-shadow: 0 0 5px rgba(0, 180, 255, 0.5);
+}
+
+.emoji-sub-tabs .sub-tab-btn:hover {
+  color: #fff;
+}
+
+/* --- Περιεχόμενο --- */
+.emoji-content {
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.tab-content {
+  display: none;
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px;
+  scrollbar-width: thin;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* --- Emoji Grid --- */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+  gap: 6px;
+  padding: 8px;
+  text-align: center;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.emoji-grid span {
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.emoji-grid span:hover {
+  transform: scale(1.3);
+}
+/* --- Scroll για GIFs & Stickers --- */
+.gif-grid,
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  justify-content: center;
+  padding: 8px;
+  max-height: 240px;
+  overflow-y: auto;         /* ✅ ενεργοποιεί scroll */
+  scrollbar-width: thin;
+}
+
+.gif-grid img,
+.sticker-grid img {
+  width: 100%;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.gif-grid img:hover,
+.sticker-grid img:hover {
+  transform: scale(1.05);
+}
+
+
+
+.giphy-search {
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+/* ===================== Emoji Trail Effect ===================== */
+.emoji-float {
+  position: fixed;
+  font-size: 24px;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.8;
+}
+
+/* === Fade-in για κάθε νέο μήνυμα === */
+.fade-in {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: msgFade 0.25s ease forwards;
+}
+
+@keyframes msgFade {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Emoji-only μεγέθυνση === */
+.emoji-only .msg-text {
+  font-size: 2.2em;
+  line-height: 1.2;
+  animation: popIn 0.25s ease-out;
+  text-align: center;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ===================== GIFS ===================== */
+
+.chat-gif {
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: 10px;
+  display: block;
+  margin: 6px 0;
+  transition: transform 0.2s ease;
+}
+
+.chat-gif:hover {
+  transform: scale(1.05);
+}
+/* === Role Select Buttons (Convo style) === */
+.role-btn {
+  background: #2b2b2b;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 6px rgba(0,0,0,0.3);
+}
+
+.role-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
+}
+
+/* Χρώματα ανά ρόλο */
+.role-btn.admin {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.role-btn.vip {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+}
+.role-btn.user {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+}
+
+/* ===== User Manager: scroll ΜΕΣΑ στο κουτί λίστας ===== */
+
+/* Το modal κεντραρισμένο και χωρίς εξωτερικό scroll */
+#userManagerModal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 2000 !important;
+  width: min(600px, 90vw);
+  max-height: 82vh; /* 🔧 λίγο μεγαλύτερο modal */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+/* Περιεχόμενο modal */
+#userManagerModal .modal-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Το περιεχόμενο γίνεται column για να “σπρώχνει” σωστά τη λίστα */
+#userManagerModal .modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ο wrapper της λίστας δεν έχει scroll – απλώς κρατάει χώρο */
+#userManagerModal .user-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+
+/* ✅ Scroll μόνο μέσα στο ίδιο το κουτί λίστας (με το rounded) */
+#userManagerList {
+  flex: 1;
+  overflow-y: auto !important;
+  height: 100%;
+  max-height: calc(82vh - 180px); /* 🔥 ακριβές offset για header+κουμπιά */
+  padding-right: 8px;
+  margin-bottom: 2px;
+}
+
+
+/* Όταν ανοίγει modal, κλείδωσε το body */
+body.modal-open { overflow: hidden !important; }
+
+
+/* === FIX: Convo Bubble Always On Top === */
+/* === Convo Bubble Always on Top (over any modal) === */
+#convoBubbleOverlay,
+.convo-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  pointer-events: all !important;
+}
+.convo-bubble {
+  position: fixed !important;
+  z-index: 100000 !important;
+}
+/* === Convo Bubble Overlay & Popup (Convo Style Polish) === */
+.convo-overlay {
+  position: fixed !important;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 99999 !important;
+  animation: convoFadeIn 0.2s ease;
+}
+
+.convo-bubble {
+  background: linear-gradient(180deg, #1b222c, #10151d);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px 22px;
+  width: 320px;
+  max-width: 90%;
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+  animation: convoPop 0.25s ease;
+}
+
+.bubble-header {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bubble-content {
+  font-size: 14px;
+  color: #ddd;
+  margin-bottom: 14px;
+}
+
+.bubble-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.bubble-buttons .btn {
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bubble-buttons .btn.small {
+  min-width: 100px;
+}
+
+/* === Hover Effects === */
+.bubble-buttons .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.bubble-buttons .btn.danger {
+  background: #c0392b;
+  color: #fff;
+}
+.bubble-buttons .btn.danger:hover {
+  background: #e74c3c;
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.4);
+}
+
+/* === Animations === */
+@keyframes convoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes convoPop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* ===================== UID PANEL ===================== */
+.uid-panel {
+  position: fixed;
+  top: 45px;
+  right: 10px;
+  width: 380px; /* 🧩 αυξήσαμε από 300px */
+  max-height: 420px; /* 🧩 ελαφρώς ψηλότερο */
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  overflow: hidden;
+  z-index: 9999;
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+
+.uid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 15px;
+  background: rgba(40,40,40,0.9);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.uid-list {
+  padding: 10px 12px;
+  max-height: 370px;
+  overflow-y: auto;
+  overflow-x: hidden; /* 🧩 καμία οριζόντια κύλιση */
+}
+
+/* === Κάθε γραμμή χρήστη === */
+.uid-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease, transform 0.1s ease;
+  white-space: nowrap; /* 🧩 αποφυγή αλλαγής γραμμής */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uid-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.01);
+}
+
+/* === Ονόματα === */
+.uid-name {
+  font-weight: 500;
+  color: #fff;
+  flex: 0 0 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === UID === */
+.uid-code {
+  font-family: monospace;
+  font-size: 12.5px;
+  opacity: 0.9;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === Copy κουμπί === */
+.copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #fff;
+  flex: 0 0 26px;
+  transition: transform 0.15s ease, color 0.2s ease;
+}
+
+.copy-btn:hover {
+  transform: scale(1.2);
+  color: #7afcff;
+}
+
+/* === Copied animation === */
+.copied-note {
+  font-size: 11px;
+  color: #66ff99;
+  margin-left: 4px;
+  animation: fadeOut 1.2s forwards;
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* ===================== ΝΕΑ ΜΗΝΥΜΑΤΑ ALERT ===================== */
+.new-msg-alert {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0.95;
+  z-index: 999;
+}
+
+.new-msg-alert:hover {
+  background: rgba(0, 150, 255, 0.8);
+  transform: translateX(-50%) scale(1.05);
+}
+/* === User Manager Avatars === */
+.avatar-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.user-row .convo-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.user-row .convo-avatar-default {
+  font-size: 14px;
+  line-height: 36px;
+  font-weight: 600;
+}
+/* ===================== Chat Message Avatars ===================== */
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.msg-avatar .convo-avatar,
+.msg-avatar .convo-avatar-default {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.msg-body {
+  flex: 1;
+}
+
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+/* === Κεντράρισμα των αρχικών μέσα στο avatar κύκλο === */
+.convo-avatar-default {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+}
+/* ===================== User List Avatars ===================== */
+.user-item .convo-avatar,
+.user-item .convo-avatar-default {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.user-item .convo-avatar-default {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+/* ===================== User Manager Rows with Avatars ===================== */
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name-role {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.role {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.role.admin { color: #ff4d4d; }
+.role.vip { color: #ffd700; }
+.role.user { color: #2d8cff; }
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-info .convo-avatar,
+.user-info .convo-avatar-default {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+/* ===================== PROFILE MODAL ===================== */
+.profile-box {
+  width: min(420px, 90vw);
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 12px 14px;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-name {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.profile-role {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.profile-status {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* ===================== PROFILE EDIT BUTTONS ===================== */
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+/* ===================== AVATAR SMOOTH TRANSITION ===================== */
+.convo-avatar,
+.convo-avatar-default {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.convo-avatar.updating,
+.convo-avatar-default.updating {
+  opacity: 0;
+}
+/* ===================== AVATAR RING POLISH ===================== */
+.avatar-ring {
+  position: relative;
+  display: inline-block;
+  width: 28px;          /* userlist size */
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.06);       /* λεπτό γενικό ring */
+}
+
+/* role/status variants */
+.avatar-ring.ring-admin  { box-shadow: 0 0 0 2px rgba(255,77,77,0.45), 0 0 8px rgba(255,77,77,0.25); }
+.avatar-ring.ring-vip    { box-shadow: 0 0 0 2px rgba(255,215,0,0.45), 0 0 8px rgba(255,215,0,0.25); }
+.avatar-ring.ring-online { box-shadow: 0 0 0 2px rgba(45,140,255,0.55), 0 0 10px rgba(45,140,255,0.25); }
+
+/* ensure inner img/initials fill the ring */
+.avatar-ring .convo-avatar,
+.avatar-ring .convo-avatar-default {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* hover micro-glow */
+.avatar-ring:hover { filter: brightness(1.05); }
+/* ===============================================================
+   🧑‍🎨 PROFILE MODAL — UI POLISH (Convo Style)
+   =============================================================== */
+
+/* === Modal overlay === */
+#profileModal.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* === Modal box === */
+.profile-box {
+  width: min(420px, 90vw);
+  background: rgba(20, 20, 25, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+/* ===============================================================
+   👤 Profile Modal Header — Final Compact v3
+   =============================================================== */
+.profile-box .modal-header {
+  background: linear-gradient(135deg, #4766ff, #7289ff);
+  color: #fff;
+  padding: 4px 10px;           /* πολύ πιο σφιχτό */
+  min-height: 34px;            /* μειώθηκε κι άλλο */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.profile-box .modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.profile-box .modal-header h3 span {
+  font-size: 16px;
+  transition: transform 0.25s ease, text-shadow 0.25s ease;
+}
+
+/* ✨ Hover pulse effect στο emoji/avatar */
+.profile-box .modal-header h3 span:hover {
+  transform: scale(1.18);
+  text-shadow: 0 0 6px rgba(255,255,255,0.5);
+}
+
+/* === Close button === */
+.profile-box .modal-header .icon-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.profile-box .modal-header .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* === Content === */
+.profile-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.profile-role,
+.profile-status {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* === Animations === */
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+/* ============================================================
+   💬 PRIVATE CHAT TABS BAR — CONVO FINAL SYNC FIX (NO HTML CHANGES)
+   ============================================================ */
+#privateTabsBar {
+  position: fixed;
+  top: 56px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(25, 25, 30, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-radius: 0 0 12px 12px;
+  transition: all 0.25s ease;
+  z-index: 52;
+  left: 0;
+  right: 0;
+}
+
+/* === DM Tabs === */
+.private-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(40,40,55,0.9), rgba(30,30,45,0.9));
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: #fff;
+}
+.private-tab:hover {
+  background: linear-gradient(90deg, rgba(60,60,80,0.9), rgba(45,45,65,0.9));
+}
+.private-tab.active {
+  background: linear-gradient(90deg, #306aff, #7c4dff);
+  box-shadow: 0 0 8px rgba(120,120,255,0.4);
+}
+.tab-label {
+  font-size: 14px;
+}
+.tab-close {
+  opacity: 0.7;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.tab-close:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* === Private Chat Button (💬) === */
+.private-chat-btn {
+  position: absolute;
+  right: -28px;
+  top: 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.private-chat-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.user-item:hover .private-chat-btn {
+  display: inline-block;
+}
+
+/* === SYNCED PANEL OFFSETS (χωρίς αλλαγή HTML) === */
+body.rooms-open #privateTabsBar {
+  left: 240px;
+}
+body.users-open #privateTabsBar {
+  right: 250px;
+}
+body.rooms-open.users-open #privateTabsBar {
+  left: 240px;
+  right: 250px;
+}
+/* 🟦 Όταν ανοίγει το Rooms Panel */
+.panel.left.visible ~ main#chatContainer #privateTabsBar {
+  left: 240px;
+}
+
+/* 🟦 Όταν ανοίγει το Users Panel */
+.panel.right.visible ~ main#chatContainer #privateTabsBar {
+  right: 250px;
+}
+
+/* 🟦 Όταν ανοίγουν και τα δύο */
+.panel.left.visible ~ .panel.right.visible ~ main#chatContainer #privateTabsBar {
+  left: 240px;
+  right: 250px;
+}
+#privateTabsBar .private-tab:first-child {
+  margin-left: 25px; /* ξεκινάει λίγο πιο δεξιά */
+}
+
+/* ===================== DM NOTIFICATION ICON ===================== */
+#dmNotifBtn {
+  position: relative;
+  font-size: 20px;
+}
+
+#dmNotifBtn .notif-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background-color: #ff4444;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ff0000;
+  animation: pulseDot 1.3s infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.7;
+  }
+}
+
+#friendReqBtn {
+  position: relative;
+}
+
+#friendReqBtn .notif-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background-color: #ff4444;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ff0000;
+  animation: pulseDot 1.3s infinite;
+}
+
+/* ===================== DM ACTION BAR ===================== */
+.dm-action-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(25, 25, 30, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  z-index: 49;
+}
+
+.dm-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #ccc;
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dm-btn:hover {
+  color: #fff;
+  background: rgba(45,140,255,0.2);
+  border-color: rgba(45,140,255,0.4);
+  box-shadow: 0 0 8px rgba(45,140,255,0.3);
+}
+
+.dm-status-icon {
+  font-size: 14px;
+  opacity: 0.75;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.15));
+}
+.dm-status-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 6px var(--glow-color, rgba(90,150,255,0.6)));
+}
+/* === Convo Prompt (Ναι / Όχι) Polish === */
+#convoPromptOverlay .convo-bubble {
+  background: linear-gradient(180deg, #1b222c, #10151d);
+  border: 1px solid rgba(45, 140, 255, 0.4);
+  box-shadow: 0 0 20px rgba(45, 140, 255, 0.2);
+  color: #fff;
+}
+
+#convoPromptOverlay .bubble-buttons .btn.success {
+  background: #2d8cff;
+  color: #fff;
+}
+#convoPromptOverlay .bubble-buttons .btn.success:hover {
+  background: #4da3ff;
+  box-shadow: 0 0 10px rgba(45,140,255,0.4);
+}
+
+#convoPromptOverlay .bubble-buttons .btn.danger {
+  background: #e74c3c;
+  color: #fff;
+}
+#convoPromptOverlay .bubble-buttons .btn.danger:hover {
+  background: #ff5f4d;
+  box-shadow: 0 0 10px rgba(231,76,60,0.4);
+}
+/* === Input πεδίο για Convo Prompt (Create Room) === */
+.bubble-input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  font-size: 14px;
+}
+/* === Room select list === */
+.room-select-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px 0;
+}
+
+
+.room-select-item {
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.room-select-item:hover {
+  background: rgba(45,140,255,0.25);
+  transform: scale(1.02);
+}
+
+.room-select-item.active {
+  background: rgba(255,80,80,0.3);
+  box-shadow: 0 0 8px rgba(255,80,80,0.4);
+  border: 1px solid rgba(255,80,80,0.5);
+}
+/* 💬 Convo DM Popup */
+.dm-popup {
+  position: fixed;
+  background: rgba(25,25,30,0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 200;
+  backdrop-filter: blur(6px);
+}
+.dm-popup .popup-title {
+  font-weight: bold;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.dm-popup .popup-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.dm-popup .popup-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+.dm-popup .preview {
+  font-size: 13px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* ======================================================
+   🧩 Convo Popup (για επιλογή ρόλου)
+   ====================================================== */
+.convo-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(25, 25, 35, 0.95);
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  color: #fff;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.popup-inner h4 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.popup-buttons button {
+  background: #333;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.popup-buttons button:hover {
+  background: #555;
+}
+
+.popup-close {
+  background: none;
+  color: #aaa;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+
+/* STATUS DOT */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  box-shadow: 0 0 6px rgba(255,255,255,0.2);
+  vertical-align: middle;
+}
+/* ===================== User Status Text (κάτω από το όνομα) ===================== */
+.user-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.user-status-text {
+  font-size: 12px;
+  color: #aaa;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+/* Προαιρετικά: Χρώματα ανάλογα με το status */
+.user-status-text.away {
+  color: #ffb347; /* 🟠 */
+}
+.user-status-text.online {
+  color: #4ade80; /* 🟢 */
+}
+.user-status-text.offline {
+  color: #888; /* 🔴 */
+}
+
+/* ===============================================================
+   🧩 Mini Profile Modal (Step 9C – UI only)
+   =============================================================== */
+.mini-profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.25s ease;
+}
+
+.mini-profile-box {
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 18px;
+  width: min(340px, 90vw);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(0,200,255,0.25);
+  animation: convoPop 0.25s ease;
+}
+
+.mini-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 10px;
+}
+
+.mini-profile-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #66b3ff;
+}
+
+.mini-prof-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 16px;
+  cursor: pointer;
+}
+.mini-prof-close:hover { color: #fff; }
+
+.mini-prof-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mini-prof-avatar,
+.mini-prof-avatar-default {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.mini-prof-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-prof-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mini-prof-role {
+  font-size: 14px;
+  text-transform: capitalize;
+}
+.mini-prof-role.admin { color: #ff4d4d; }
+.mini-prof-role.vip { color: #ffd700; }
+.mini-prof-role.user { color: #2d8cff; }
+
+.mini-prof-status {
+  font-size: 13px;
+  color: #9db2c7;
+}
+
+.mini-prof-uid {
+  font-size: 12px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.mini-prof-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+/* dot */
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+.dot.online { background: #4cff4c; }
+.dot.offline { background: #777; }
+/* ===============================================================
+   ✨ Mini Profile Polish (Step 9C-C)
+   =============================================================== */
+.glow-animate {
+  animation: glowFade 0.6s ease;
+}
+@keyframes glowFade {
+  0% { box-shadow: 0 0 25px rgba(0,200,255,0.6); transform: scale(0.95); }
+  100% { box-shadow: 0 0 25px rgba(0,200,255,0.25); transform: scale(1); }
+}
+
+.mini-prof-role {
+  font-weight: 600;
+}
+.mini-prof-role.admin::after { content: " 🛡️"; }
+.mini-prof-role.vip::after { content: " ⭐"; }
+
+.mini-prof-avatar, .mini-prof-avatar-default {
+  border: 2px solid rgba(0,200,255,0.25);
+  transition: border-color 0.3s ease;
+}
+.mini-prof-avatar:hover, .mini-prof-avatar-default:hover {
+  border-color: rgba(0,200,255,0.5);
+}
+/* ===============================================================
+   🧩 Friend Profile Expanded Modal (Step 10A – UI Only)
+   =============================================================== */
+.friend-profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.25s ease;
+}
+
+.friend-profile-box {
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  width: min(420px, 95vw);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(0,200,255,0.25);
+  animation: convoPop 0.25s ease;
+  overflow: hidden;
+}
+
+.friend-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.friend-profile-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.friend-profile-avatar,
+.friend-profile-avatar-default {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.friend-profile-role {
+  text-transform: capitalize;
+  font-size: 14px;
+  opacity: 0.85;
+}
+.friend-profile-role.admin::after { content: " 🛡️"; }
+.friend-profile-role.vip::after { content: " ⭐"; }
+
+.friend-profile-tabs {
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.fp-tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 14px;
+}
+.fp-tab.active {
+  color: #fff;
+  border-bottom: 2px solid #00ccff;
+}
+
+.friend-profile-content {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.fp-tab-content p {
+  color: #9db2c7;
+  font-size: 14px;
+  margin: 0;
+}
+/* ===============================================================
+   🧩 Friend Profile Expanded Modal — Fix overlap (z-index)
+   =============================================================== */
+.friend-profile-overlay {
+  z-index: 9999 !important;
+}
+
+.friend-profile-box {
+  position: relative;
+  z-index: 10000;
+}
+/* ===== Friend Profile — Overview grid (10B-1) ===== */
+.fp-overview-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px 16px;
+  padding: 8px 10px;
+}
+
+.fp-strong{ font-weight: 600; }
+
+.fp-pill{
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  text-transform: capitalize;
+}
+
+/* Optional: role-based tint (αν θέλεις ελαφρύ χρώμα στο role) */
+#fpRole.admin  { border-color: rgba(255,77,77,0.4);   box-shadow: 0 0 8px rgba(255,77,77,0.15) inset; }
+#fpRole.vip    { border-color: rgba(255,215,0,0.45);  box-shadow: 0 0 8px rgba(255,215,0,0.15) inset; }
+#fpRole.user   { border-color: rgba(45,140,255,0.45); box-shadow: 0 0 8px rgba(45,140,255,0.15) inset; }
+
+/* Μικρό responsive σπάσιμο σε 1 στήλη σε πολύ μικρές οθόνες */
+@media (max-width: 420px){
+  .fp-overview-grid{ grid-template-columns: 1fr; }
+}
+/* ===== Friend Profile — Mutuals (10B-2) ===== */
+.fp-mutual-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.fp-mutual-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px dashed rgba(255,255,255,0.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+}
+.fp-mutual-item .ava {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #333; display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600;
+}
+.fp-mutual-item .name { font-weight: 500; }
+.fp-friend-bubble {
+  background: rgba(30,30,40,0.95);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  z-index: 9999;
+  width: 260px;
+  color: #fff;
+}
+.fp-friend-bubble-inner { display:flex; flex-direction:column; gap:8px; }
+.fp-friend-bubble-header { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+.fp-friend-bubble-actions { display:flex; justify-content:space-between; margin-top:6px; }
+.fp-friend-bubble-close { background:none; border:none; color:#aaa; cursor:pointer; }
+/* ===========================================================
+   💫 Convo – Friend Bubble Polish (Step 11D)
+   =========================================================== */
+.fp-friend-bubble {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  background: rgba(30, 30, 45, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 14px;
+  width: 270px;
+  max-width: 85vw;
+  box-shadow: 0 0 25px rgba(120, 80, 255, 0.25);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  opacity: 0;
+  animation: fpBubbleIn 0.22s ease-out forwards;
+}
+
+/* ✨ Fade-in / scale animation */
+@keyframes fpBubbleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.85);
+    box-shadow: 0 0 0 rgba(120, 80, 255, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 25px rgba(120, 80, 255, 0.25);
+  }
+}
+
+/* Header layout */
+.fp-friend-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Avatar styling */
+.fp-friend-bubble-header img,
+.fp-friend-avatar-default {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* Info section */
+.fp-friend-bubble-info {
+  flex: 1;
+}
+.fp-friend-bubble-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+.fp-friend-bubble-role {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.fp-friend-bubble-status {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Buttons */
+.fp-friend-bubble-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.fp-friend-bubble button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fp-friend-bubble button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.fp-friend-bubble-close {
+  background: none !important;
+  border: none !important;
+  color: #aaa;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+.fp-friend-bubble-close:hover {
+  color: #fff;
+  transform: scale(1.15);
+}
+
+/* Online/offline dots */
+.dot.online  { background: #4cff8f; }
+.dot.offline { background: #f55; }
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+/* ============================================================
+   🎁 Convo Gifts Tab — Basic Layout (Step 12B)
+   ============================================================ */
+.fp-gifts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.fp-gift-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  gap: 10px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.fp-gift-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.fp-gift-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fp-gift-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.fp-gift-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+}
+
+.fp-gift-meta {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+.fp-gift-meta span {
+  color: #ffcc70; /* Convo-gold accent */
+}
+
+#fpGiftsEmpty {
+  margin-top: 6px;
+  font-size: 14px;
+  opacity: 0.7;
+  text-align: center;
+}
+.fp-gift-item:hover .fp-gift-icon {
+  box-shadow: 0 0 10px var(--glow-color, #ffcc70);
+}
+.btn.glow {
+  background: linear-gradient(90deg, #ffcc70, #ff8c00);
+  color: #000;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn.glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px #ffcc70;
+}
+/* ===============================================================
+   🎁 Gifts — Νέα Δώρα Indicator (Step 12C)
+   =============================================================== */
+.fp-gift-item.new-gift {
+  background: rgba(255, 80, 80, 0.1);
+  border-color: rgba(255, 80, 80, 0.3);
+  box-shadow: 0 0 8px rgba(255, 80, 80, 0.25);
+}
+
+.fp-gift-item.old-gift {
+  opacity: 0.6;
+}
+
+.gift-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #ff4444;
+  box-shadow: 0 0 6px #ff4444;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   🎁 Convo Gift Picker (Step 13A)
+   ============================================================ */
+.gift-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.gift-choice {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  transition: background 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+.gift-value {
+  font-size: 13px;
+  color: #ffcc70;
+  margin-left: 6px;
+  opacity: 0.85;
+}
+
+
+.gift-choice .emoji {
+  font-size: 18px;
+}
+
+.gift-choice:hover {
+  background: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+
+.bubble-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+/* ===============================================================
+   AUTH MODE CLEAN VIEW — Hide Top Icons & Center Logo
+   =============================================================== */
+body.auth-active #topbar .top-right,
+body.auth-active #youtubeBtn,
+body.auth-active #profileBtn,
+body.auth-active #settingsBtn,
+body.auth-active #systemBtn,
+body.auth-active #coinsBtn,
+body.auth-active #musicBtn,
+body.auth-active #youtubePanel {
+  display: none !important;
+}
+
+/* 🔹 Topbar in Auth Mode (centered logo, clean layout) */
+body.auth-active #topbar {
+  justify-content: center !important;
+  height: 50px !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* 🔹 Logo stays centered before login (no jump) */
+body.auth-active #topbar .brand {
+  position: relative;
+  left: 0;
+  transform: none;
+}
+
+/* 🔹 Normal layout after login (chat-active) */
+body.chat-active #topbar {
+  justify-content: space-between !important;
+}
+
+/* ===============================================================
+   🧩 Convo Prompt Layout Fix
+   =============================================================== */
+.prompt-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.prompt-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+  transition: 0.2s;
+}
+
+.prompt-wrapper input:focus {
+  border-color: #3b82f6;
+  background: rgba(255,255,255,0.1);
+}
+/* ===============================================================
+   💚 CONVO FRIENDS TAB — Final Unified Layout & Polish
+   =============================================================== */
+
+.friends-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* === Κύρια γραμμή φίλου === */
+.friend-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: background 0.25s ease, transform 0.25s ease;
+  flex-wrap: nowrap !important;
+}
+.friend-item:hover {
+  background: rgba(255,255,255,0.06);
+  transform: translateY(-1px);
+}
+
+/* === Πληροφορίες (avatar + όνομα) === */
+.friend-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-avatar,
+.friend-avatar-default {
+  width: 36px !important;
+  height: 36px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+/* === Τελίτσα κατάστασης === */
+.friend-name-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.status-dot {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.status-dot.online  { background: #37ff8b; }
+.status-dot.away    { background: #ffb84d; }
+.status-dot.offline { background: #ff4d4d; }
+.status-dot.idle    { background: #cccccc; }
+
+/* === Όνομα & ρόλος === */
+.friend-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
+}
+.friend-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+.friend-role {
+  font-size: 12px;
+  opacity: 0.8;
+  text-transform: capitalize;
+}
+.friend-role.admin { color: #ff4d4d; }
+.friend-role.vip   { color: #ffd700; }
+.friend-role.user  { color: #2d8cff; }
+
+/* === Κουμπιά δεξιά === */
+.friend-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+.friend-actions .btn {
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  transition: all 0.25s ease;
+}
+.friend-actions .btn:hover {
+  background: rgba(45,140,255,0.25);
+  border-color: rgba(45,140,255,0.5);
+  transform: translateY(-1px);
+}
+
+/* === Κουμπί αφαίρεσης === */
+.friend-actions .btn.red {
+  background: rgba(255,60,60,0.12);
+  border-color: rgba(255,60,60,0.35);
+  color: #ff7070;
+}
+.friend-actions .btn.red:hover {
+  background: rgba(255,60,60,0.2);
+  box-shadow: 0 0 8px rgba(255,60,60,0.3);
+}
+
+/* === Hover glow στο avatar === */
+.friend-item:hover .friend-avatar,
+.friend-item:hover .friend-avatar-default {
+  box-shadow: 0 0 8px rgba(255,255,255,0.25);
+}
+/* ===============================================================
+   👥 FRIENDS NAME OVERFLOW FIX (Responsive — Convo Final)
+   =============================================================== */
+.friend-name,
+.fp-friend-name,
+.friend-bubble-name,
+.friend-bubble .friend-bubble-name {
+  display: inline-block;
+  max-width: 140px;          /* desktop */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Επιτρέπει στο όνομα να κάνει σωστά ellipsis μέσα σε flex container */
+.friend-text,
+.friend-info,
+.friend-bubble-header div {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Responsive — μικρότερα πλάτη για κινητά */
+@media (max-width: 600px) {
+  .friend-name,
+  .fp-friend-name,
+  .friend-bubble-name,
+  .friend-bubble .friend-bubble-name {
+    max-width: 100px;
+  }
+}
+/* ===============================================================
+   👥 FRIEND NAME TOOLTIP (Full Name on Hover)
+   =============================================================== */
+.friend-name {
+  position: relative;
+  cursor: default;
+}
+
+/* Tooltip bubble */
+.friend-name::after {
+  content: attr(data-fullname);
+  position: absolute;
+  bottom: 120%;
+  left: 0;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+}
+
+/* Hover animation */
+.friend-name:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Friend / DM notification dots */
+
+.friend-req-item {
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.friend-req-item .actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+/* ===================== Pointer Hover for Usernames ===================== */
+.user-item:hover,
+.msg-user:hover {
+  cursor: pointer;
+}
+/* ===============================================================
+   💬 DM Popup Styles — unread indicator & time
+   =============================================================== */
+.popup-item {
+  padding: 8px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.popup-item.unread {
+  background: rgba(255,255,255,0.05);
+}
+.popup-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+.popup-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.popup-time {
+  font-size: 12px;
+  opacity: 0.6;
+}
+.popup-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #ccc;
+}
+.popup-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4444;
+  box-shadow: 0 0 6px #ff4444;
+}
+/* ===============================================================
+   💬 DM Notif Popup Close Button
+   =============================================================== */
+.popup-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.popup-close:hover {
+  color: #fff;
+}
+/* ===============================================================
+   🫂 FRIEND REQUEST PANEL — Timestamp & Layout
+   =============================================================== */
+.friend-req-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.friend-req-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.01);
+}
+
+.friend-req-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.friend-req-name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.friend-req-time {
+  font-size: 12px;
+  color: #9db2c7;
+  opacity: 0.85;
+}
+
+.friend-req-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.friend-req-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.friend-req-accept {
+  background: #2d8cff;
+  color: #fff;
+}
+.friend-req-accept:hover {
+  background: #4da3ff;
+}
+
+.friend-req-reject {
+  background: rgba(255, 80, 80, 0.25);
+  color: #ff8080;
+}
+.friend-req-reject:hover {
+  background: rgba(255, 80, 80, 0.4);
+}
+/* ===============================================================
+   🩵 CONVO PULSE / LOUNGE — UI SLOT (Task 1 — UI only)
+   Namespaced selectors to avoid collisions
+   =============================================================== */
+
+.convo-pulse-slot {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 13px;
+}
+
+.convo-pulse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 6px 4px;
+  user-select: none;
+}
+
+.convo-pulse-content {
+  margin-top: 8px;
+}
+
+.pulse-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  transition: background 0.18s ease, transform 0.12s ease;
+}
+
+.pulse-row:hover {
+  background: rgba(45,140,255,0.08);
+  transform: translateY(-1px);
+}
+
+.pulse-row .pulse-votes {
+  color: #9be7ff;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.pulse-row .pulse-open-btn,
+.pulse-row .pulse-vote-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #ddd;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pulse-row .pulse-open-btn:hover,
+.pulse-row .pulse-vote-btn:hover {
+  background: rgba(45,140,255,0.18);
+  box-shadow: 0 0 8px rgba(45,140,255,0.25);
+}
+/* ---------------------------------------------------------------
+   🩵 CONVO PULSE HEADER MICRO-POLISH (Step 2)
+   --------------------------------------------------------------- */
+.convo-pulse-header {
+  position: relative;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text, #eaeaea);
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  transition: color 0.2s ease;
+}
+
+.convo-pulse-header:hover {
+  color: #b3e5fc;
+}
+
+/* μικρό βελάκι που περιστρέφεται */
+.convo-pulse-header small {
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+.convo-pulse-header.collapsed small {
+  transform: rotate(-90deg);
+}
+
+/* διακριτική underline λάμψη όταν είναι ενεργό */
+.convo-pulse-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(90deg,#4fc3f7,#81d4fa,#4fc3f7);
+  transition: width 0.3s ease;
+}
+
+.convo-pulse-header:hover::after {
+  width: 100%;
+}
+/* ===============================================================
+   📰 CONVO PULSE / LOUNGE SECTION — Visual separation
+   =============================================================== */
+#convoPulseSlot {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+#convoPulseSlot .convo-pulse-header {
+  font-weight: 600;
+  color: var(--accent, #66ccff);
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+#convoPulseSlot .pulse-row {
+  transition: background 0.2s ease;
+}
+
+#convoPulseSlot .pulse-row:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+/* ===============================================================
+   🧠 CONVO PULSE — Step 4 (Card Visual Upgrade)
+   =============================================================== */
+.pulse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pulse-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid rgba(45, 140, 255, 0.4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.pulse-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.pulse-row .pulse-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pulse-badge {
+  min-width: 28px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.pulse-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pulse-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.pulse-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* === Χρώματα ανά τύπο === */
+.pulse-row[data-type="news"]   { border-left-color: rgba(0, 180, 255, 0.6); }
+.pulse-row[data-type="idea"]   { border-left-color: rgba(255, 200, 0, 0.6); }
+.pulse-row[data-type="event"]  { border-left-color: rgba(255, 80, 80, 0.6); }
+.pulse-row[data-type="smoothie"] { border-left-color: rgba(0, 255, 180, 0.6); }
+
+.pulse-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pulse-actions button {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pulse-actions button:hover {
+  background: rgba(45,140,255,0.25);
+  color: #fff;
+}
+/* ===============================================================
+   🩵 CONVO PULSE — Step 4B (Card Color Polish + Layout)
+   =============================================================== */
+.pulse-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s ease;
+}
+
+.pulse-row:hover {
+  background: rgba(255,255,255,0.06);
+  transform: translateX(2px);
+}
+
+/* Κύρια ενότητα με τίτλο + περιγραφή */
+.pulse-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.3;
+}
+
+.pulse-title {
+  font-weight: 600;
+  color: #eaf6ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.pulse-title .pulse-icon {
+  font-size: 16px;
+}
+
+.pulse-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Χρώματα ανά τύπο */
+.pulse-type-news {
+  border-left: 4px solid rgba(0,180,255,0.6);
+  box-shadow: inset 2px 0 8px rgba(0,180,255,0.25);
+}
+
+.pulse-type-idea {
+  border-left: 4px solid rgba(255,200,0,0.6);
+  box-shadow: inset 2px 0 8px rgba(255,200,0,0.25);
+}
+
+.pulse-type-smoothie {
+  border-left: 4px solid rgba(0,255,180,0.6);
+  box-shadow: inset 2px 0 8px rgba(0,255,180,0.25);
+}
+
+.pulse-type-event {
+  border-left: 4px solid rgba(255,100,100,0.6);
+  box-shadow: inset 2px 0 8px rgba(255,100,100,0.25);
+}
+
+/* 📍 Pinned glow */
+.pulse-row[style*="255,255,120"] {
+  background: rgba(255,255,200,0.05);
+  box-shadow: 0 0 10px rgba(255,255,150,0.3);
+}
+/* ===============================================================
+   🌈 CONVO PULSE — Step 4C (Gradient Type Badges)
+   =============================================================== */
+.pulse-type-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-right: 6px;
+  text-transform: uppercase;
+  box-shadow: 0 0 6px rgba(0,0,0,0.3);
+}
+
+.pulse-news {
+  background: linear-gradient(90deg, #007bff, #00c6ff);
+}
+
+.pulse-idea {
+  background: linear-gradient(90deg, #ffb300, #ffca28);
+}
+
+.pulse-smoothie {
+  background: linear-gradient(90deg, #e65100, #ff8f00);
+  box-shadow: 0 0 10px rgba(255,100,0,0.45);
+}
+
+
+.pulse-event {
+  background: linear-gradient(90deg, #ff5252, #ff1744);
+}
+
+.pulse-post {
+  background: linear-gradient(90deg, #888, #aaa);
+}
+
+/* ===============================================================
+   💖 PATCH — COMPACT REACTIONS STYLE (Step 1D)
+   =============================================================== */
+
+.reactions-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.reaction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, rgba(0,255,255,0.12), rgba(255,0,255,0.12));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 1px 5px 2px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 0 4px rgba(0,255,255,0.2);
+  backdrop-filter: blur(4px);
+}
+
+.reaction-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(0,255,255,0.4);
+}
+
+.reaction-btn small {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-left: 2px;
+  display: inline-block;
+  transition: transform .25s;
+  font-weight: 600;
+}
+
+
+/* Μικρή neon μπάρα επιλογής */
+.reaction-quickbar {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 16px;
+  opacity: 0.75;
+  filter: drop-shadow(0 0 6px rgba(0,255,255,0.4));
+}
+
+.reaction-quickbar span:hover {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 8px rgba(255,0,255,0.7));
+}
+/* ===============================================================
+   💖 PATCH — REACTIONS BAR (Step 1B)
+   =============================================================== */
+.reaction-bar .reaction-btn {
+  color:#fff;
+  background:linear-gradient(90deg,rgba(0,255,255,0.15),rgba(255,0,255,0.15));
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;
+  padding:2px 6px;
+  box-shadow:0 0 6px rgba(0,255,255,0.3);
+}
+.reaction-bar .reaction-btn small {
+  opacity:0.8;
+  font-size:12px;
+  margin-left:2px;
+}
+.reaction-add {
+  font-size: 16px;
+  margin-top: 3px;
+}
+.reaction-popup span {
+  padding: 2px;
+}
+
+/* ===============================================================
+   ✨ PATCH — CONVO POP REACTIONS (Step 1G)
+   =============================================================== */
+.hover-reaction-bar span {
+  padding: 1px;
+  transition: transform .15s, filter .15s;
+}
+.hover-reaction-bar span:hover {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 8px rgba(255,0,255,0.6));
+}
+
+/* ===============================================================
+   💫 PATCH — REACTIONS STACK POLISH (Convo Style)
+   =============================================================== */
+.reaction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 2px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.15);
+  border-radius: 8px;
+  padding: 2px 6px 3px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #fff;
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 8px rgba(0,255,255,0.4);
+}
+
+.reaction-btn small {
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ===============================================================
+   ✨ PATCH — SMART TOOLTIP POSITION (Step 1L)
+   =============================================================== */
+.reaction-tooltip {
+  transition: left .2s ease, top .2s ease;
+  pointer-events: none;
+  max-width: 220px;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.3;
+   backdrop-filter: blur(6px);
+  animation: fadeInTooltip 0.2s ease;
+  transition: opacity 0.15s ease;
+}
+
+@keyframes fadeInTooltip {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===============================================================
+   ✂️ PATCH — COMPACT MESSAGE SPACING (Main Chat)
+   =============================================================== */
+.msg {
+  margin-bottom: 1px !important; /* μειώνει το κάθετο κενό ανάμεσα στα μηνύματα */
+}
+
+.msg-body {
+  margin-bottom: 3px; /* φέρνει το reactions bar πιο κοντά στο κείμενο */
+}
+
+.reactions-wrap,
+.hover-reaction-bar {
+  margin-top: 2px !important; /* κρατά τις αντιδράσεις κολλητά στο μήνυμα */
+}
+/* ===============================================================
+   ✂️ PATCH — COMPACT MESSAGE SPACING (no duplicates)
+   =============================================================== */
+.msg,
+.message,
+.chat-message,
+.message-item {
+  margin-bottom: 2px !important;
+  padding-bottom: 0 !important;
+}
+
+.msg-body,
+.message-content {
+  margin-bottom: 1px !important;
+}
+
+.reaction-bar {
+  margin-top: 1px !important;
+  margin-bottom: 4px !important;
+}
+/* ===============================================================
+   💬 REPLY BAR — Step 1A
+   =============================================================== */
+.reply-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,255,255,0.1);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #fff;
+}
+.reply-bar.hidden { display: none; }
+.reply-info { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reply-info span { opacity: 0.8; }
+#cancelReplyBtn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+#cancelReplyBtn:hover { opacity: 1; }
+/* ===============================================================
+   💬 REPLY PREVIEW — Step 1B
+   =============================================================== */
+.reply-preview {
+  background: rgba(255,255,255,0.05);
+  border-left: 2px solid rgba(0,255,255,0.4);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.reply-user {
+  color: #00f0ff;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.reply-text {
+  opacity: 0.8;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.message-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+/* ===============================================================
+   💫 REPLY HIGHLIGHT EFFECT
+   =============================================================== */
+.reply-highlight {
+  animation: replyFlash 1.2s ease-out;
+}
+@keyframes replyFlash {
+  0% { background-color: rgba(0,255,255,0.15); }
+  50% { background-color: rgba(0,255,255,0.25); }
+  100% { background-color: transparent; }
+}
+/* ===============================================================
+   💬 REPLY POLISH — Hover + Tooltip
+   =============================================================== */
+.reply-preview {
+  position: relative;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s;
+}
+.reply-preview:hover {
+  background: rgba(0,255,255,0.08);
+  border-left-color: rgba(0,255,255,0.6);
+}
+.reply-preview::after {
+  content: "Κλικ για εμφάνιση μηνύματος";
+  position: absolute;
+  bottom: 100%;
+  left: 8px;
+  background: rgba(0,0,0,0.85);
+  color: #00f0ff;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.reply-preview:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* ===============================================================
+   💫 REPLY THREAD POLISH — Step 3C
+   =============================================================== */
+.reply-preview {
+  position: relative;
+  cursor: pointer;
+  border-left: 2px solid rgba(0,255,255,0.4);
+  padding-left: 8px;
+  transition: all 0.25s ease;
+}
+.reply-preview:hover {
+  border-left-color: rgba(0,255,255,0.8);
+  background: rgba(0,255,255,0.05);
+}
+.reply-preview::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  bottom: -4px;
+  width: 1px;
+  height: 8px;
+  background: linear-gradient(to bottom, rgba(0,255,255,0.3), transparent);
+  transition: opacity 0.25s ease;
+  opacity: 0;
+}
+.reply-preview:hover::before {
+  opacity: 1;
+}
+
+/* ✨ Όταν το αρχικό μήνυμα κάνει highlight */
+.reply-highlight {
+  box-shadow: 0 0 8px rgba(0,255,255,0.5);
+  border-radius: 8px;
+  transition: box-shadow 0.8s ease;
+}
+.reply-highlight-fade {
+  outline-color: transparent;
+  box-shadow: none;
+}
+.reply-linked-hover {
+  background: rgba(0,255,255,0.06);
+  border-left-color: rgba(0,255,255,0.7);
+}
+
+/* ===============================================================
+   💬 Reply Action Button — Step 4B POLISH
+   =============================================================== */
+.reply-action-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 15px;
+  color: rgba(0,255,255,0.55);
+  cursor: pointer;
+  opacity: 0;
+  z-index: 2; /* κάτω από admin menu αλλά πάνω από text */
+  pointer-events: none;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+/* Εμφανίζεται μόνο όταν είσαι πάνω στο μήνυμα */
+.message:hover .reply-action-btn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-1px);
+  filter: drop-shadow(0 0 4px rgba(0,255,255,0.4));
+}
+
+/* Hover style */
+.reply-action-btn:hover {
+  color: #00f0ff;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 6px rgba(0,255,255,0.7));
+}
+
+/* Συμβατότητα με reactions hover */
+.message:hover .hover-reaction-bar {
+  margin-top: 22px; /* δίνει λίγο χώρο ώστε να μην ακουμπάει το reply btn */
+}
+/* ===============================================================
+   💫 Reply Quick Animation — Step 4C
+   =============================================================== */
+.reply-bar {
+  transition: box-shadow 0.3s ease;
+}
+.reply-bar.active {
+  box-shadow: 0 0 8px rgba(0,255,255,0.6);
+}
+/* ===============================================================
+   💬 MESSAGE SPACING FIX — Reduce vertical gaps
+   =============================================================== */
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 1px 0;        /* ↓ μειώνει τον “αέρα” πάνω-κάτω */
+  margin-bottom: 0;      /* ↓ κανένα extra κενό ανάμεσα στα bubbles */
+}
+/* ===============================================================
+   🪙 COINS TAB — Convo Glow Polish
+   =============================================================== */
+.coins-balance-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 14px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, rgba(255,220,100,0.08), rgba(255,200,50,0.05));
+  border: 1px solid rgba(255, 200, 60, 0.25);
+  border-radius: 14px;
+  box-shadow: 0 0 15px rgba(255,200,60,0.15);
+  transition: box-shadow 0.25s ease;
+  animation: coinFadeIn 0.4s ease;
+}
+.coins-balance-box:hover {
+  box-shadow: 0 0 20px rgba(255,200,60,0.25);
+}
+.coins-icon {
+  font-size: 38px;
+  animation: coinSpin 3s linear infinite;
+}
+@keyframes coinSpin {
+  0%,100% { transform: rotateY(0deg); }
+  50% { transform: rotateY(180deg); }
+}
+.coins-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.coins-label {
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.2px;
+}
+.coins-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffe680;
+  text-shadow: 0 0 10px rgba(255,230,100,0.6);
+  animation: pulseCoin 2s infinite ease-in-out;
+}
+@keyframes pulseCoin {
+  0%,100% { text-shadow: 0 0 10px rgba(255,230,100,0.5); transform: scale(1); }
+  50% { text-shadow: 0 0 18px rgba(255,230,100,0.9); transform: scale(1.05); }
+}
+.coins-note {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+}
+
+/* === Ιστορικό συναλλαγών === */
+.coins-history {
+  margin-top: 14px;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 6px;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  padding-top: 6px;
+}
+.coins-history h4 {
+  font-size: 14px;
+  color: #ffd85e;
+  margin-bottom: 6px;
+}
+.coins-history div {
+  font-size: 14px;
+  transition: transform 0.15s ease, opacity 0.3s ease;
+}
+.coins-history div:hover {
+  transform: translateX(3px);
+  opacity: 0.9;
+}
+@keyframes coinFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.glow-animate {
+  animation: glowCoin 0.6s ease;
+}
+@keyframes glowCoin {
+  0% { text-shadow: 0 0 0px rgba(255,230,100,0); transform: scale(0.9); }
+  50% { text-shadow: 0 0 16px rgba(255,230,100,0.8); transform: scale(1.1); }
+  100% { text-shadow: 0 0 0px rgba(255,230,100,0); transform: scale(1); }
+}
+
+/* ===============================================================
+   🧱 Coins Tab — Side Layout
+   =============================================================== */
+.coins-wrap {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.coins-history {
+  flex: 1;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  padding-top: 6px;
+}
+
+.earn-coins-box {
+  width: 150px;
+  min-height: 230px;            /* 🆙 αυξήσαμε ύψος */
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px 10px 12px 10px; /* λίγο παραπάνω padding */
+  box-shadow: 0 0 10px rgba(255,215,100,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+    margin-top: -35px; /* 🆕 */
+}
+/* ✨ Glow hover effect */
+.earn-coins-box:hover {
+  border-color: rgba(255,215,100,0.35);
+  box-shadow: 0 0 18px rgba(255,215,100,0.25), 0 0 8px rgba(255,215,100,0.2) inset;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Λεπτό animation για “αναπνοή” */
+@keyframes earnGlowPulse {
+  0%,100% { box-shadow: 0 0 12px rgba(255,215,100,0.12); }
+  50%     { box-shadow: 0 0 20px rgba(255,215,100,0.22); }
+}
+.earn-coins-box {
+  animation: earnGlowPulse 3s ease-in-out infinite;
+}
+
+.earn-coins-box h4 {
+  text-align: center;
+  color: #ffd85e;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.earn-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1; /* 🆕 κρατάει τα κουμπιά μέσα στο πλαίσιο */
+}
+.earn-actions-vertical .btn.small {
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 12px 6px;
+  line-height: 1.2;
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+}
+.earn-actions-vertical .btn.small:hover {
+  transform: translateX(2px);
+  box-shadow: 0 0 10px rgba(255,215,100,0.25);
+}
+/* ===============================================================
+   🎁 GIFT SUMMARY MODAL — FADE-IN ANIMATION
+   =============================================================== */
+.convo-overlay .convo-bubble {
+  animation: giftFadeIn 0.28s ease-out;
+  transform-origin: center center;
+}
+
+@keyframes giftFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* ===============================================================
+   🎁 GIFT SUMMARY BADGE
+   =============================================================== */
+.gift-count-badge {
+  background: linear-gradient(135deg, #ff66cc, #ffcc33);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 0 10px #ff99ff88;
+  margin-left: 6px;
+  animation: pulseBadge 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulseBadge {
+  from { transform: scale(1); box-shadow: 0 0 8px #ff99ff66; }
+  to   { transform: scale(1.1); box-shadow: 0 0 14px #ffcc3388; }
+}
+/* ===============================================================
+   💬 MENTION POPUP (Convo Mentions v1)
+   =============================================================== */
+.mention-popup {
+  position: absolute;
+  bottom: 90px; /* πάνω από το input bar */
+  left: 70px;   /* μικρή απόσταση από το emoji κουμπί */
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.25);
+  color: #fff;
+  min-width: 180px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px 0;
+  font-size: 14px;
+  z-index: 300; /* πάνω από όλα τα panels */
+}
+
+.mention-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.mention-item:hover {
+  background: rgba(45, 140, 255, 0.2);
+  color: #fff;
+}
+
+.mention-empty {
+  padding: 8px 12px;
+  opacity: 0.6;
+  text-align: center;
+  font-style: italic;
+}
+/* ===============================================================
+   💬 MENTION HIGHLIGHT (Convo Mentions v2)
+   =============================================================== */
+
+/* Για όλα τα mentions (ορατά σε όλους) */
+.mention {
+  color: #00c8ff; /* ανοιχτό μπλε */
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.mention:hover {
+  color: #33e1ff; /* λίγο πιο φωτεινό στο hover */
+}
+
+/* Για mentions που αφορούν τον τρέχοντα χρήστη */
+.mention-self {
+  color: #00ff9d; /* πρασινο-κυανό */
+  font-weight: 700;
+  background: rgba(0, 255, 157, 0.15);
+  padding: 2px 4px;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);
+  animation: mentionPulse 1s ease;
+}
+
+/* Μικρό animation όταν λαμβάνεις @mention */
+@keyframes mentionPulse {
+  0% {
+    background: rgba(0, 255, 157, 0.25);
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
+  }
+  100% {
+    background: rgba(0, 255, 157, 0.15);
+    box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);
+  }
+}
+.mentions-dropdown {
+  position: absolute;
+  top: 45px; /* ύψος κάτω από το κουμπί */
+  right: 80px; /* προσαρμόζεις ανάλογα τη θέση του κουμπιού */
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 8px;
+  width: 260px;
+  z-index: 2000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.mentions-dropdown .mentions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1f2937;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.mentions-dropdown .mentions-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.mentions-dropdown.hidden {
+  display: none;
+}
+.mention-item-panel {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mention-item-panel:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.mention-item.active {
+  background-color: rgba(59, 130, 246, 0.3); /* μπλε highlight */
+  border-radius: 6px;
+}

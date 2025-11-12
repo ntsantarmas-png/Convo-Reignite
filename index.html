@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Convo — Admin Tools Stable</title>
+  <style>
+  /* 🔹 Εφαρμόζεται πριν φορτώσει το κύριο CSS */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;   /* κρατά το logo στο κέντρο από το πρώτο frame */
+  }
+  body.chat-active #topbar {
+    justify-content: space-between; /* επαναφορά μετά το login */
+  }
+</style>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
+<!-- ===================== PRELOAD FIX ===================== -->
+<script>
+  // ✅ Απόλυτη σταθερότητα στο logo κατά το πρώτο load
+  document.addEventListener("DOMContentLoaded", () => {
+    // Προετοιμάζουμε το σώμα σε "auth-active" κατάσταση πριν φορτώσουν τα scripts
+    if (!document.body.classList.contains("chat-active")) {
+      document.body.classList.add("auth-active");
+    }
+  });
+</script>
+
+</head>
+<body class="auth-active">
+
+  <!-- ===================== TOPBAR ===================== -->
+  <header id="topbar">
+    <div class="brand">
+      <span class="logo">💬</span>
+      <span class="title">Convo</span>
+    </div>
+
+    <div class="top-actions">
+      <!-- Admin & System -->
+<button id="youtubeBtn" class="icon-btn" title="YouTube Panel">🎵</button>
+      <button id="systemBtn" class="hidden icon-btn" title="System Logs">⚡</button>
+          <!-- ✏️ Rename Logs button (μόνο για MysteryMan) -->
+<button id="renameBtn" class="hidden icon-btn" title="Rename Logs">✏️</button>
+<button id="adminMenuBtn" class="icon-btn hidden" title="Admin Menu">⚙️</button>
+<!-- 🆔 UID Panel button (μόνο για MysteryMan) -->
+<button id="uidBtn" class="hidden icon-btn" title="UID Panel">🆔</button>
+
+      <button id="userManagerBtn" class="icon-btn hidden" title="User Manager">👥</button>
+   <button id="profileBtn" class="icon-btn hidden" title="Profile">🧑</button>
+<!-- 💬 DM Notifications -->
+<button id="dmNotifBtn" class="icon-btn hidden" title="Private Messages">
+  💬
+  <span id="dmNotifDot" class="notif-dot hidden"></span>
+</button>
+<!-- 🫂 Friend Requests -->
+<button id="friendReqBtn" class="icon-btn hidden" title="Friend Requests">
+  🫂
+  <span id="friendReqDot" class="notif-dot hidden"></span>
+</button>
+<!-- 🏷️ Mentions -->
+<!-- 🏷️ Mentions -->
+<button id="mentionsBtn" class="icon-btn" title="Mentions Panel">
+  💠
+  <span id="mentionsDot" class="notif-dot hidden"></span>
+</button>
+
+
+      <button id="logoutBtn" class="hidden">Logout</button>
+    </div>
+  </header>
+
+  <!-- ===================== AUTH CONTAINER ===================== -->
+  <main id="authContainer">
+    <h2>Welcome to Convo</h2>
+    <p class="muted">Create an account or log in to continue.</p>
+
+    <div class="auth-grid">
+      <!-- ==== REGISTER ==== -->
+      <section class="auth-section">
+        <h3>Create Account</h3>
+        <div class="grid-2x2">
+          <input type="text" id="registerUsername" placeholder="Username" />
+          <input type="email" id="registerEmail" placeholder="Email" />
+          <input type="password" id="registerPassword" placeholder="Password" />
+          <button id="registerBtn" class="btn">Register</button>
+        </div>
+      </section>
+
+      <!-- ==== LOGIN ==== -->
+      <section class="auth-section">
+        <h3>Login</h3>
+        <div class="grid-2x2">
+          <input type="email" id="loginEmail" placeholder="Email" />
+          <input type="password" id="loginPassword" placeholder="Password" />
+          <button id="loginBtn" class="btn">Login</button>
+          <button id="guestBtn" class="btn ghost">Continue as Guest</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===================== ROOMS PANEL ===================== -->
+  <aside id="roomsPanel" class="panel left hidden">
+    
+    <div class="rooms-controls">
+      <button id="createRoomBtn" class="btn small">➕ New Room</button>
+      <button id="deleteRoomBtn" class="btn small danger">🗑 Delete Room</button>
+    </div>
+    <ul id="roomsList" class="rooms-list"></ul>
+  </aside>
+  <button id="roomsToggleBtn" class="panel-toggle hidden">☰</button>
+
+  <!-- ===================== USERS PANEL ===================== -->
+  <aside id="usersPanel" class="panel right hidden">
+    
+    <ul id="usersList" class="list"></ul>
+  </aside>
+  <button id="usersToggleBtn" class="panel-toggle right hidden">👥</button>
+
+ <!-- ===================== CHAT CONTAINER ===================== -->
+<main id="chatContainer" class="hidden">
+    <!-- 💬 PRIVATE CHAT TABS BAR -->
+<div id="privateTabsBar" class="private-tabs-bar hidden">
+
+    <!-- Τα tabs θα μπαίνουν δυναμικά εδώ -->
+  </div>
+  <!-- 💬 DM Action Bar -->
+<div id="dmActionBar" class="hidden dm-action-bar">
+  <button class="dm-btn" id="ignoreBtn" title="Ignore User">🚫 Ignore</button>
+  <button class="dm-btn" id="muteBtn" title="Mute User">🔕 Mute</button>
+  <button class="dm-btn" id="clearBtn" title="Clear Chat">🗑️ Clear</button>
+  <button class="dm-btn" id="closeDmBtn" title="Close DM">❌ Close</button>
+</div>
+
+
+  <section id="messages" class="scroll-area">
+    <div class="empty-hint">👋 Καλωσήρθες! Στείλε το πρώτο σου μήνυμα.</div>
+  </section>
+<!-- 📨 Νέα Μηνύματα Ειδοποίηση -->
+<div id="newMessageAlert" class="hidden new-msg-alert">⬇️ Έχετε νέα μηνύματα</div>
+
+  <!-- 💫 Emoji / GIF / Sticker Panel (πάνω από input bar) -->
+  <div id="emojiPanel" class="emoji-panel hidden">
+ <!-- === Κύρια Tabs (Emoji | GIFs | Stickers) === -->
+<div class="emoji-main-tabs">
+  <button class="main-tab-btn active" data-tab="emoji">😊 Emoji</button>
+  <button class="main-tab-btn" data-tab="gifs">🎞️ GIFs</button>
+  <button class="main-tab-btn" data-tab="stickers">💫 Stickers</button>
+</div>
+
+<!-- === Υποκατηγορίες (εμφανίζονται μόνο όταν είναι ενεργό το Emoji tab) === -->
+<div class="emoji-sub-tabs" id="emojiSubTabs">
+  <button class="sub-tab-btn active" data-cat="smileys">😀 Smileys</button>
+  <button class="sub-tab-btn" data-cat="animals">🐶 Animals</button>
+  <button class="sub-tab-btn" data-cat="food">🍕 Food</button>
+  <button class="sub-tab-btn" data-cat="activities">⚽ Activities</button>
+  <button class="sub-tab-btn" data-cat="symbols">❤️ Symbols</button>
+</div>
+
+    <div class="emoji-content">
+      <!-- Emoji grid -->
+      <div id="emojiTab" class="tab-content active">
+  <div class="emoji-grid"></div>
+</div>
+
+
+      <!-- GIFs grid -->
+      <div id="gifsTab" class="tab-content">
+        <input type="text" class="giphy-search" placeholder="🔍 Search GIFs..." />
+        <div class="gif-grid"></div>
+      </div>
+
+      <!-- Stickers grid -->
+      <div id="stickersTab" class="tab-content">
+        <input type="text" class="giphy-search" placeholder="🔍 Search Stickers..." />
+        <div class="sticker-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💬 Input Bar -->
+  <form id="messageForm" class="inputbar" autocomplete="off">
+    <button type="button" id="emojiBtn" class="icon-btn" title="Emoji">😊</button>
+    <textarea id="messageInput" rows="1" placeholder="Γράψε ένα μήνυμα…"></textarea>
+    <button type="submit" id="sendBtn" class="btn">Send</button>
+  </form>
+</main>
+
+<!-- ====== ADMIN CONTEXT MENU ====== -->
+<div id="adminContextMenu" class="context-menu hidden">
+  <div class="menu-item" data-action="delete">🗑️ Delete Message</div>
+  
+</div>
+
+
+  <!-- ===================== SYSTEM LOGS MODAL ===================== -->
+  <div id="systemModal" class="hidden modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🧠 System Logs</h3>
+        <button id="clearLogsBtn" class="btn danger small">Clear</button>
+        <button id="closeSystemBtn" class="icon-btn">✖</button>
+      </div>
+      <div class="modal-content">
+        <div id="systemLogsFilter"></div>
+        <div id="systemLogsList"></div>
+      </div>
+    </div>
+  </div>
+
+    <!-- ===================== CONVO BUBBLE ===================== -->
+  <div id="convoBubbleOverlay" class="hidden">
+    <div id="convoBubble" class="bubble-box">
+      <div class="bubble-header">
+        <span class="bubble-title">Convo Alert</span>
+        <button id="bubbleCloseBtn" class="bubble-close">✖</button>
+      </div>
+      <div class="bubble-content" id="bubbleContent">...</div>
+      <div class="bubble-actions">
+        <button id="bubbleOkBtn" class="btn small">OK</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===================== RENAME LOGS MODAL ===================== -->
+  <div id="renameModal" class="hidden modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✏️ Rename Logs</h3>
+        <button id="closeRenameBtn" class="icon-btn">✖</button>
+      </div>
+      <div class="modal-content">
+        <div id="renameLogsList" class="logs-list scroll-area"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BANNED USERS MODAL ===================== -->
+<div id="bannedModal" class="hidden modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🚫 Banned Users</h3>
+      <button id="closeBannedBtn" class="icon-btn">✖</button>
+    </div>
+    <div class="modal-content">
+      <div id="bannedUsersList" class="banned-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MUTED USERS MODAL ===================== -->
+<div id="mutedModal" class="hidden modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🔈 Muted Users</h3>
+      <button id="closeMutedBtn" class="icon-btn">✖</button>
+    </div>
+    <div class="modal-content">
+      <div id="mutedUsersList" class="banned-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FRIEND REQUESTS PANEL ===================== -->
+<div id="friendReqPanel" class="hidden modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🫂 Friend Requests</h3>
+      <button id="closeFriendReqBtn" class="icon-btn">✖</button>
+    </div>
+    <div class="modal-content">
+      <div id="friendReqList" class="scroll-area">
+        <p class="muted">Δεν υπάρχουν αιτήματα φιλίας.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== YOUTUBE PANEL ===================== -->
+<div id="youtubePanel" class="hidden youtube-panel">
+  <div class="youtube-header">
+    <span>🎬 YouTube Player</span>
+    <button id="closeYoutubeBtn" class="icon-btn">✖</button>
+  </div>
+  <div id="youtubeContent" class="youtube-content">
+    <p class="muted">🎵 Κανένα βίντεο – στείλε ένα YouTube link στο chat!</p>
+  </div>
+</div>
+<!-- ===================== MENTIONS DROPDOWN ===================== -->
+<div id="mentionsPanel" class="hidden mentions-dropdown">
+  <div class="mentions-header">
+    <span>🏷️ Mentions</span>
+    <button id="closeMentionsBtn" class="icon-btn small">✖</button>
+  </div>
+  <div id="mentionsList" class="mentions-list scroll-area">
+    <p class="muted">Δεν υπάρχουν mentions ακόμα.</p>
+  </div>
+</div>
+
+<!-- ===================== USER MANAGER PANEL ===================== -->
+<div id="userManagerModal" class="hidden">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <h3>⚙️ User Manager</h3>
+      <div class="modal-actions">
+        <button id="clearGuestsBtn2" class="btn small">🧹 Clear Guests</button>
+        <button id="clearChatBtn2" class="btn small danger">🗑️ Clear Chat</button>
+        <button id="refreshUsersBtn" class="btn small">🔁 Refresh</button>
+        <button id="closeUserManagerBtn" class="icon-btn">❎</button>
+      </div>
+    </div>
+
+    <!-- ✅ Scroll container για το περιεχόμενο -->
+    <div class="user-list-container">
+      <div class="modal-content">
+        <!-- Tabs -->
+        <div id="userTabs" class="tabs">
+          <button data-tab="all" class="tab-btn active">All Users</button>
+          <button data-tab="admins" class="tab-btn">Admins (0)</button>
+          <button data-tab="vips" class="tab-btn">VIPs (0)</button>
+          <button data-tab="guests" class="tab-btn">Guests (0)</button>
+          <button data-tab="banned" class="tab-btn">Banned (0)</button>
+          <button data-tab="muted" class="tab-btn">Muted (0)</button>
+        </div>
+
+        <!-- Search -->
+        <input id="userSearch" type="text" placeholder="🔍 Αναζήτηση χρήστη ή ρόλου..." class="search-bar" />
+
+        <!-- User List -->
+        <div id="userManagerList" class="user-list scroll-area"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===================== UID PANEL (Admin-only) ===================== -->
+<div id="uidPanel" class="hidden uid-panel">
+  <div class="uid-header">
+    <h3>🆔 UID List</h3>
+    <button id="closeUidBtn" class="icon-btn">✖</button>
+  </div>
+  <div id="uidList" class="uid-list scroll-area">
+    <p class="muted">(loading...)</p>
+  </div>
+</div>
+
+
+<!-- ===================== SCRIPTS ===================== -->
+<script type="module" src="./firebaseInit.js"></script>
+<script type="module" src="./currentUser.js"></script>  <!-- ✅ Μεταφέρθηκε πάνω -->
+<script type="module" src="./roomsPanel.js"></script>
+<script type="module" src="./app.js"></script>
+<script type="module" src="./youtube.js"></script>
+<script type="module" src="./chatMessages.js"></script>
+<script type="module" src="./userManager.js"></script>
+<script type="module" src="./renameLogs.js"></script>
+<script type="module" src="./uidPanel.js"></script>
+<script type="module" src="./profileModal.js"></script>
+<script type="module" src="./privateTabs.js"></script>
+<script type="module" src="./dmNotifier.js"></script>
+<script src="pulseReactions.js"></script>
+<script type="module" src="./mentionsPanel.js"></script>
+<script type="module">
+  import { loadMentionsPanel } from "./mentionsPanel.js";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const mentionsBtn = document.getElementById("mentionsBtn");
+    const mentionsPanel = document.getElementById("mentionsPanel");
+    const closeMentionsBtn = document.getElementById("closeMentionsBtn");
+
+    mentionsBtn.classList.remove("hidden");
+
+    mentionsBtn.addEventListener("click", () => {
+      mentionsPanel.classList.remove("hidden");
+      loadMentionsPanel(); // 🔥 φόρτωσε τα mentions όταν ανοίγει
+    });
+
+    closeMentionsBtn.addEventListener("click", () => {
+      mentionsPanel.classList.add("hidden");
+    });
+
+    mentionsPanel.addEventListener("click", (e) => {
+      if (e.target === mentionsPanel) {
+        mentionsPanel.classList.add("hidden");
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
