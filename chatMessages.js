@@ -319,17 +319,28 @@ window.addEventListener("roomChanged", (e) => {
   loadRoomMessages(newRoom);
 });
 
-// === Αρχική φόρτωση default room ===
-window.addEventListener("load", () => {
-  // Ελέγχουμε ότι υπάρχει το mainChat πριν το χρησιμοποιήσουμε
+// ===============================================================
+// 🚀 Wait for userReady before loading chat (Fix for login timing)
+// ===============================================================
+window.addEventListener("userReady", () => {
+  console.log("✅ userReady received → initializing chat modules...");
+
   const mainChat = document.getElementById("mainChat");
   if (!mainChat) {
-    console.warn("⚠️ mainChat not found in DOM yet.");
+    console.warn("⚠️ mainChat not found in DOM yet (retrying...)");
+    setTimeout(() => window.dispatchEvent(new Event("userReady")), 300);
     return;
   }
 
+  // Τώρα που ο χρήστης είναι έτοιμος → φόρτωσε τα messages
   loadRoomMessages(currentRoom);
+
+  // ✅ Αν θες, εδώ μπορείς να καλέσεις και άλλα modules:
+  // initPresence();
+  // initPulse();
+  // initRooms();
 });
+
 
 
 // === ENTER to send / SHIFT+ENTER for newline + Mentions Safe ===
