@@ -82,3 +82,11 @@ if (user.isAnonymous || (user.displayName || "").toLowerCase() === "guest") {
     }
   });
 }
+
+// ============================================================
+// 🚀 Wait for userReady before initializing Presence
+// ============================================================
+window.addEventListener("userReady", () => {
+  console.log("✅ userReady received → initializing presence...");
+  setupPresence();
+});
