@@ -219,7 +219,7 @@ let rolesLoaded  = false;
 
   usersMap.set(uid, {
     displayName: val.displayName || prev.displayName || "Guest",
-    state: val.state || "offline",
+    status: val.state || "offline",
     role: mergedRole,
     banned: prev.banned || false,
     muted: prev.muted || false
@@ -238,7 +238,7 @@ onChildChanged(statusRef, snap => {
 
   usersMap.set(uid, {
   displayName: val.displayName || prev.displayName || "Guest",
-  state: val.status || val.state || prev.state || "offline",
+  status: val.status || val.state || prev.state || "offline",
 
   role: prev.role || val.role || "user"  // ✅ κρατά πάντα το σωστό role από /users
 });
@@ -260,7 +260,7 @@ onValue(statusRef, (snap) => {
 
     usersMap.set(uid, {
       ...prev,
-      state: st.state || st.status || "offline",
+      status: st.state || st.status || "offline",
       lastChanged: st.lastChanged || prev.lastChanged || 0,
     });
   });
@@ -297,7 +297,7 @@ onChildAdded(usersRef, snap => {
   } else {
     usersMap.set(uid, {
       displayName: val.displayName || "Guest",
-      state: "offline",
+      status: "offline",
       role: val.role || "user",
       banned: val.banned || false,   // 👈 κόμμα εδώ
       muted: val.muted || false      // 👈 νέο πεδίο
@@ -342,7 +342,7 @@ if (!window._usersStatusListenerBound) {
       const prev = usersMap.get(uid);
       usersMap.set(uid, {
         ...prev,
-        state: val.status || prev.state || "offline",
+        status: val.status || prev.state || "offline",
         displayName: val.displayName || prev.displayName,
         role: val.role || prev.role,
       });
