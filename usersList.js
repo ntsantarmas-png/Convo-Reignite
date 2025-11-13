@@ -238,7 +238,8 @@ onChildChanged(statusRef, snap => {
 
   usersMap.set(uid, {
   displayName: val.displayName || prev.displayName || "Guest",
-  state: val.state || prev.state || "offline",
+  state: val.status || val.state || prev.state || "offline",
+
   role: prev.role || val.role || "user"  // ✅ κρατά πάντα το σωστό role από /users
 });
 
