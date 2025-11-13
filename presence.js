@@ -83,7 +83,6 @@ if (user.isAnonymous || (user.displayName || "").toLowerCase() === "guest") {
   });
 }
 
-         
 // ============================================================
 // 🚀 Wait for userReady before initializing Presence (single run)
 // ============================================================
