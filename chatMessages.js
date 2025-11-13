@@ -27,6 +27,7 @@ import { toggleReaction, renderReactions } from "./reactions.js";
 
 import { closeEmojiPanelOnSend } from "./emojiPanel.js";
 import { initMentionsPanel } from "./mentionsPanel.js";
+import { showMentionDot } from "./mentionsPanel.js";
 
 // ===============================================================
 // 🧩 Live Avatar Refresh — ενημέρωση avatars σε πραγματικό χρόνο
