@@ -166,11 +166,19 @@ setTimeout(() => {
   }
 }, 2000);
 
-window.currentUser = user;
-window.dispatchEvent(new Event("userReady"));
+// 🔥 Τώρα εμφανίζουμε το Chat UI στο DOM
+authContainer.classList.add("hidden");
+chatContainer.classList.remove("hidden");
 
-      authContainer.classList.add("hidden");
-      chatContainer.classList.remove("hidden");
+// 🟦 ΤΩΡΑ υπάρχει το mainChat → μπορούμε να κάνουμε init τα modules
+window.currentUser = user;
+
+// Δώσε ένα μικρό delay 100ms να ζωγραφίσει το DOM
+setTimeout(() => {
+    console.log("🚀 Dispatching userReady AFTER chatContainer is visible");
+    window.dispatchEvent(new Event("userReady"));
+}, 100);
+
       document.body.classList.remove("auth-active");
 
       // === Guest Read-Only UI Mode (Step 6 – Part A) ===
