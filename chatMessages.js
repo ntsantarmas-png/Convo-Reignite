@@ -38,7 +38,7 @@ import { onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-data
 // ============================================================================
 function playMentionSound() {
   try {
-    const audio = new Audio("/mention.wav");
+    const audio = new Audio("mention.wav");
     audio.volume = 0.5; // 🎚️ πιο ήπια ένταση
     audio.play().catch(() => {}); // αγνόησε browser auto-play μπλοκάρισμα
   } catch (err) {
