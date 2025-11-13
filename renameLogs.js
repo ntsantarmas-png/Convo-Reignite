@@ -24,7 +24,7 @@ const closeRenameBtn = document.getElementById("closeRenameBtn");
 
 // 🔒 Όλοι οι επιτρεπόμενοι admins (βάζεις όποια UIDs θέλεις)
 const allowedUids = [
-  "LNT3cUi6sUPW3l1FCGSZMJVAymv1", // MysteryMan
+  "LNT3cUi6sUPW3I1FCGSZMJVAymv1", // ✔️ MysteryMan UID σωστό
   "EXAMPLE_UID_1", // Admin #2
   "EXAMPLE_UID_2", // Admin #3
 ];
