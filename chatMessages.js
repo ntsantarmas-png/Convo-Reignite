@@ -332,7 +332,7 @@ window.addEventListener("userReady", () => {
   const mainChat = document.getElementById("mainChat");
 
   if (!mainChat) {
-    console.warn("⚠️ mainChat not found in DOM yet — retrying in 200ms...");
+console.log("⏳ Waiting for mainChat DOM...");
     setTimeout(() => window.dispatchEvent(new CustomEvent("chatRetry")), 200);
     return;
   }
