@@ -242,31 +242,7 @@ onChildChanged(statusRef, snap => {
 
   role: prev.role || val.role || "user"  // ✅ κρατά πάντα το σωστό role από /users
 });
-// =====================================================
-// 🔵 Presence Listener — track online/offline live
-// =====================================================
-const statusRef = ref(db, "status");
 
-onValue(statusRef, (snap) => {
-  const allStatus = snap.val() || {};
-
-  // Ενημέρωσε τον usersMap με τα νέα states
-  Object.keys(allStatus).forEach((uid) => {
-    const st = allStatus[uid];
-
-    if (!usersMap.has(uid)) return;
-
-    const prev = usersMap.get(uid);
-
-    usersMap.set(uid, {
-      ...prev,
-      status: st.state || st.status || "offline",
-      lastChanged: st.lastChanged || prev.lastChanged || 0,
-    });
-  });
-
-  renderList();
-});
 
 
   
