@@ -320,21 +320,44 @@ window.addEventListener("roomChanged", (e) => {
 });
 
 // ===============================================================
-// 🚀 Wait for userReady before loading chat (Fix for login timing)
+// 🚀 Wait for userReady before loading chat (single safe run)
 // ===============================================================
 window.addEventListener("userReady", () => {
-  console.log("✅ userReady received → initializing chat modules...");
-
-  const mainChat = document.getElementById("mainChat");
-  if (!mainChat) {
-    console.warn("⚠️ mainChat not found in DOM yet (retrying...)");
-    setTimeout(() => window.dispatchEvent(new Event("userReady")), 300);
+  // 🔒 Safety flag – να γίνει μόνο 1 φορά
+  if (window.__chatInitialized) {
+    console.log("💬 Chat already initialized — skipping duplicate call.");
     return;
   }
 
-  // Τώρα που ο χρήστης είναι έτοιμος → φόρτωσε τα messages
-  loadRoomMessages(currentRoom);
+  const mainChat = document.getElementById("mainChat");
 
+  if (!mainChat) {
+    console.warn("⚠️ mainChat not found in DOM yet — retrying in 200ms...");
+    setTimeout(() => window.dispatchEvent(new CustomEvent("chatRetry")), 200);
+    return;
+  }
+
+  window.__chatInitialized = true;
+  console.log("✅ Chat initialized after userReady");
+  loadRoomMessages(currentRoom);
+});
+
+// ===============================================================
+// 🔁 Chat retry event (χωρίς looping userReady)
+// ===============================================================
+window.addEventListener("chatRetry", () => {
+  if (window.__chatInitialized) return;
+
+  const mainChat = document.getElementById("mainChat");
+  if (!mainChat) {
+    setTimeout(() => window.dispatchEvent(new CustomEvent("chatRetry")), 200);
+    return;
+  }
+
+  window.__chatInitialized = true;
+  console.log("✅ Chat initialized on retry");
+  loadRoomMessages(currentRoom);
+});
   // ✅ Αν θες, εδώ μπορείς να καλέσεις και άλλα modules:
   // initPresence();
   // initPulse();
